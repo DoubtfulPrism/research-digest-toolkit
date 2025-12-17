@@ -132,47 +132,67 @@ No formal test suite yet (contributions welcome!), but:
 
 ## 📚 Adding New Sources
 
-**Template for new scrapers:**
+Thanks to the new plugin architecture, adding a new scraper is the easiest way to contribute.
 
+**1. Create Your Plugin File:**
+- Create a new file in the `scrapers/` directory (e.g., `scrapers/mastodon_scraper.py`).
+
+**2. Build the Scraper Class:**
+- Your class must inherit from `scrapers.base.ScraperBase`.
+- It must have a `name` attribute (which will be the key used in the config file).
+- It must have a `run(self, config, output_dir)` method.
+
+**Example Plugin (`scrapers/my_scraper.py`):**
 ```python
-#!/usr/bin/env python3
-"""
-Source Name Scraper - Brief description
-"""
-
-import argparse
-import sys
+from .base import ScraperBase
 from pathlib import Path
+import utils
+import database
 
-DEFAULT_OUTPUT_DIR = "notebooklm_sources_sourcename"
+class MyScraper(ScraperBase):
+    def __init__(self, verbose=True):
+        super().__init__(verbose)
+        self.name = "MySource"
 
-def fetch_content(url: str) -> dict:
-    """Fetch content from source."""
-    # Implementation
-    pass
+    def run(self, config: dict, output_dir: Path):
+        if self.verbose:
+            print(f"🔥 Scraping {self.name}...")
+        
+        # 1. Get settings from the config dict
+        api_key = config.get("api_key")
+        
+        # 2. Fetch your data
+        # ... your logic ...
+        
+        # 3. For each item, check if it's already in the DB
+        unique_id = "some_unique_id_for_your_item"
+        if database.item_exists(self.name.lower(), unique_id):
+            # Skip it
+            return
 
-def format_content(data: dict, format_type: str = 'markdown') -> str:
-    """Format for output."""
-    # Implementation
-    pass
-
-def main():
-    """Main entry point for CLI usage."""
-    parser = argparse.ArgumentParser(description='...')
-    # Add arguments
-    args = parser.parse_args()
-    # Process
-
-if __name__ == '__main__':
-    main()
+        # 4. Format content and save using utils
+        title = "My Awesome Article"
+        content = "Formatted markdown content..."
+        filename = utils.generate_filename(self.name.lower(), title, unique_id)
+        filepath = output_dir / self.name.lower() / filename
+        utils.save_document(filepath, content, self.verbose)
+        
+        # 5. Add the new item's ID to the database
+        database.add_item(self.name.lower(), unique_id)
 ```
 
-**Integration checklist:**
-1. Create scraper tool with CLI interface
-2. Add to `research_config.yaml` structure
-3. Integrate into `research_digest.py`
-4. Add documentation
-5. Update README.md
+**3. Add Configuration to `research_config.yaml`:**
+- Add a new entry under the `scrapers` key in `research_config.yaml`. The key name must be the lowercase version of your class's `name`.
+
+```yaml
+scrapers:
+  mysource:  # Corresponds to `name = "MySource"`
+    enabled: true
+    api_key: "your_secret_key"
+  # ... other scrapers
+```
+
+That's it! The `research_digest.py` script will automatically discover and run your new plugin.
 
 ## 🔐 Security
 

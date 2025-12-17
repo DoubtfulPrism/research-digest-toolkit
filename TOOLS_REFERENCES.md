@@ -1,6 +1,10 @@
-# NotebookLM Content Preparation Scripts
+# Utility Tools and Manual Scripts
 
-Seven CLI tools for preparing content for NotebookLM analysis and Obsidian integration.
+This document provides a reference for the standalone utility scripts included in the toolkit.
+
+> **Note on Scrapers:** Core data gathering from sources like Hacker News, RSS feeds, and Reddit is now handled automatically by the main `research_digest.py` script via its plugin system. The original standalone scraper scripts have been removed. To configure these scrapers, please see the `scrapers` section in `research_config.yaml`.
+
+The tools listed below are for manual, one-off tasks or for processing content not covered by the automated scrapers.
 
 ## Installation
 
@@ -8,8 +12,8 @@ Seven CLI tools for preparing content for NotebookLM analysis and Obsidian integ
 # Install dependencies
 pip install --user -r requirements.txt
 
-# Make scripts executable (already done)
-chmod +x web_scraper.py youtube_transcript.py file_splitter.py file_converter.py thread_reader.py hn_scraper.py obsidian_prep.py
+# Make scripts executable
+chmod +x *.py *.sh
 
 # Optional: Install native tools for better quality (recommended)
 # See NATIVE_ALTERNATIVES.md for details
@@ -249,61 +253,7 @@ Download and format Twitter/X threads (no API required).
 
 ---
 
-### 6. HackerNews Scraper (`hn_scraper.py`)
-
-Download HackerNews stories with full discussion threads (no API auth required).
-
-**Features:**
-- Get top/best stories from HN
-- Search HN using Algolia API
-- Download specific discussions
-- Filter by score, comment count
-- Hierarchical comment threading
-- Configurable depth and minimum scores
-- Multiple output formats
-
-**Usage:**
-```bash
-# Get top 10 stories
-./hn_scraper.py --top 10
-
-# Get specific discussion
-./hn_scraper.py https://news.ycombinator.com/item?id=39815976
-./hn_scraper.py 39815976
-
-# Search for topics
-./hn_scraper.py --search "platform engineering" --min-points 100
-
-# Filter by comment count
-./hn_scraper.py --top 30 --min-comments 50
-
-# Obsidian format with deep threading
-./hn_scraper.py --top 20 --format obsidian --depth 5
-
-# Only high-quality comments
-./hn_scraper.py 39815976 --min-comment-score 10
-
-# Help
-./hn_scraper.py --help
-```
-
-**Filtering Options:**
-- `--min-comments N` - Minimum number of comments
-- `--min-points N` - Minimum story score
-- `--min-comment-score N` - Minimum score for comments to include
-- `--depth N` - Maximum comment nesting depth (default: 3)
-
-**Use Cases:**
-- Capture practitioner discussions on dev practices
-- Follow trends in software engineering
-- Research community perspectives on tools/frameworks
-- Archive valuable technical discussions
-
-**Output:** `notebooklm_sources_hn/`
-
----
-
-### 7. Obsidian Formatter (`obsidian_prep.py`)
+### 6. Obsidian Formatter (`obsidian_prep.py`)
 
 Format any scraped content for Obsidian with YAML frontmatter and auto-tagging.
 
@@ -321,13 +271,13 @@ Format any scraped content for Obsidian with YAML frontmatter and auto-tagging.
 ./obsidian_prep.py article.txt --auto-tag
 
 # Add custom tags
-./obsidian_prep.py thread.md --tags engineering-culture team-dynamics
+./obsidian_prep.py thread.md --tags engineering-culture,team-dynamics
 
 # Batch process to Obsidian vault
 ./obsidian_prep.py -i notebooklm_sources_web/ -o ~/Documents/Obsidian/Inbox/ --auto-tag
 
 # Process all sources recursively
-./obsidian_prep.py -i notebooklm_sources_*/ -r --vault ~/Documents/Obsidian/Research/ --auto-tag
+./obsidian_prep.py -i research_digest/2025-12-17/raw/ -r --vault ~/Documents/Obsidian/Research/ --auto-tag
 
 # Add backlinks
 ./obsidian_prep.py article.md --backlink "Platform Engineering" --backlink "DevOps"
@@ -372,22 +322,26 @@ tags: [platform-engineering, devops, architecture]
 
 ### Complete Research Workflow
 ```bash
-# 1. Gather content from multiple sources
+# 1. Run the automated digest to gather content from configured sources (HN, RSS, Reddit)
+./research_digest.py
+
+# 2. Manually gather content from other sources
 ./web_scraper.py -f research_urls.txt
 ./youtube_transcript.py -f research_videos.txt
 ./thread_reader.py -f example_threads.txt
-./hn_scraper.py --search "platform engineering" --min-points 100 --min-comments 30
 
-# 2. Format for Obsidian with auto-tagging
+# 3. (Optional) Manually format all gathered content for Obsidian
+# Note: research_digest.py does this automatically for its content.
+# This is only needed if you want to process manually gathered items.
 ./obsidian_prep.py -i notebooklm_sources_*/ -r --vault ~/Documents/Obsidian/Research/ --auto-tag
 
-# 3. Split any large files for NotebookLM
-./file_splitter.py -i ~/Documents/Obsidian/Research/ -r -o notebooklm_ready/
+# 4. Split any large files for NotebookLM
+./file_splitter.py -i research_digest/$(date +%Y-%m-%d)/obsidian/ -r --in-place
 ```
 
 ### Single Source Processing
 ```bash
-# Get article
+# Get a specific article manually
 ./web_scraper.py https://longform-article.com
 
 # Check if it needs splitting (if over 400k chars)
@@ -412,60 +366,33 @@ pandoc report.docx -o report.md
 ./file_splitter.py -i converted/ -r
 ```
 
-### Software Leadership Research Workflow
-```bash
-# Monday: Catch up on weekend discussions
-./hn_scraper.py --top 30 --min-comments 50 --format obsidian
-./thread_reader.py -f bookmarked_threads.txt --format obsidian
-
-# Throughout week: Collect interesting articles
-echo "https://blog.example.com/platform-engineering" >> research_urls.txt
-
-# Friday: Process everything for Obsidian
-./web_scraper.py -f research_urls.txt
-./youtube_transcript.py -f conference_talks.txt
-
-# Format all for Obsidian with auto-tagging
-./obsidian_prep.py -i notebooklm_sources_*/ -r \
-  --vault ~/Documents/Obsidian/Research/ \
-  --auto-tag
-
-# Prepare for NotebookLM analysis on specific topic
-./hn_scraper.py --search "platform engineering" --min-points 100
-./thread_reader.py -f platform_eng_threads.txt
-./obsidian_prep.py -i notebooklm_sources_*/platform* \
-  --tags platform-engineering infrastructure \
-  -o analysis/platform_engineering/
-```
-
 ---
 
 ## Directory Structure
 
 ```
 Scripts/
-├── web_scraper.py              # Web scraping tool
-├── youtube_transcript.py       # YouTube transcript downloader
-├── file_splitter.py           # Large file splitter
-├── file_converter.py          # Document format converter
-├── thread_reader.py           # Twitter/X thread downloader
-├── hn_scraper.py              # HackerNews scraper
-├── obsidian_prep.py           # Obsidian formatter
-├── requirements.txt           # Python dependencies
-├── README.md                  # This file
-├── NATIVE_ALTERNATIVES.md     # Guide to native Linux tools
-├── THREAD_READER_GUIDE.md     # Detailed guide for thread reader
-├── example_urls.txt          # Sample URLs for web scraper
-├── example_video_ids.txt     # Sample video IDs for transcript tool
-├── example_threads.txt       # Sample thread URLs for thread reader
-├── files_to_split/           # Default input for file splitter
-├── notebooklm_sources_web/   # Web scraper output
-├── notebooklm_sources_yt/    # YouTube transcript output
-├── notebooklm_sources_threads/ # Thread reader output
-├── notebooklm_sources_hn/    # HackerNews scraper output
-├── notebooklm_sources_split/ # File splitter output
-├── converted/                # File converter output
-└── obsidian_output/          # Obsidian formatter output
+├── research_digest.py          # Main orchestrator
+├── scrapers/                   # Scraper plugins (hn_scraper.py, etc.)
+│   ├── base.py
+│   ├── hn_scraper.py
+│   ├── reddit_scraper.py
+│   └── rss_scraper.py
+├── utils.py                    # Shared utility functions
+├── database.py                 # Persistent state database logic
+├── web_scraper.py              # Manual web scraping tool
+├── youtube_transcript.py       # Manual YouTube transcript downloader
+├── thread_reader.py            # Manual Twitter/X thread downloader
+├── obsidian_prep.py            # Manual Obsidian formatter
+├── file_splitter.py            # Utility to split large files
+├── file_converter.py           # Utility for document conversion
+├── requirements.txt            # Python dependencies
+├── research_config.yaml        # Main configuration file
+├── README.md                   # Project README
+└── research_digest/            # Default output directory
+    └── 2025-12-17/
+        ├── raw/
+        └── obsidian/
 ```
 
 ---

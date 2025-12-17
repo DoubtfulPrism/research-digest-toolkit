@@ -39,30 +39,32 @@ Automatically discovers, scrapes, and organizes content from:
 
 ---
 
-## 🛠️ Tools Included
+## 🛠️ The Toolkit
 
-### Content Gathering (6 tools)
-| Tool | Source | Purpose |
-|------|--------|---------|
-| `web_scraper.py` | Web pages | Articles, blog posts |
-| `youtube_transcript.py` | YouTube | Conference talks, tutorials |
-| `thread_reader.py` | Twitter/X | Discussion threads |
-| `hn_scraper.py` | HackerNews | Practitioner discussions |
-| `rss_reader.py` | RSS/Atom | Blog feeds |
-| `reddit_scraper.py` | Reddit | Community discussions |
-
-### Content Processing (4 tools)
-| Tool | Purpose |
-|------|---------|
-| `obsidian_prep.py` | Format for Obsidian + auto-tag |
-| `file_splitter.py` | Split large files for NotebookLM |
-| `file_converter.py` | Document format conversion |
-| `convert_documents.sh` | Native tool wrapper (pandoc, pdftotext) |
+The toolkit is composed of a central orchestrator, a set of scraper plugins, and several standalone utility tools.
 
 ### Orchestration
 | Tool | Purpose |
 |------|---------|
-| `research_digest.py` | Run everything automatically |
+| `research_digest.py` | Runs the entire pipeline by loading and executing enabled scraper plugins. |
+
+### Scraper Plugins (in `scrapers/` directory)
+| Plugin | Source | Purpose |
+|--------|--------|---------|
+| `HNScraper` | HackerNews | Fetches discussions based on keywords and score. |
+| `RSSScraper` | RSS/Atom | Monitors blog and news feeds. |
+| `RedditScraper` | Reddit | Fetches posts from specified subreddits. |
+
+### Utility Tools
+| Tool | Purpose |
+|------|---------|
+| `web_scraper.py` | Manually scrape articles from web pages. |
+| `youtube_transcript.py` | Manually download YouTube video transcripts. |
+| `thread_reader.py` | Manually download Twitter/X threads. |
+| `obsidian_prep.py` | Format any text content for Obsidian with auto-tagging. |
+| `file_splitter.py` | Split large text files into smaller chunks for NotebookLM. |
+| `file_converter.py` | Convert between document formats (e.g., PDF to text). |
+| `convert_documents.sh`| A wrapper script for higher-quality native document conversion. |
 
 ---
 
@@ -80,23 +82,23 @@ sudo dnf install pandoc poppler-utils  # Fedora/RHEL
 sudo apt install pandoc poppler-utils  # Debian/Ubuntu
 ```
 
-### 2. Configure Your Topics
+### 2. Configure Your Scrapers
 
-Edit `research_config.yaml`:
+Edit `research_config.yaml` to enable and configure your desired scrapers:
 
 ```yaml
-topics:
-  software_leadership:
-    - "engineering culture"
-    - "platform engineering"
-
-  your_topic:
-    - "your keywords"
-
-rss_feeds:
-  - url: "https://your-blog.com/feed"
-    name: "Favorite Blog"
-    tags: ["tag"]
+# In research_config.yaml
+scrapers:
+  rss:
+    enabled: true
+    feeds:
+      - url: "https://charity.wtf/feed/"
+        name: "Charity Majors"
+        tags: ["leadership"]
+  hackernews:
+    enabled: true
+    search_topics: ["engineering culture"]
+    min_points: 50
 ```
 
 ### 3. Run
@@ -191,46 +193,47 @@ cp -r research_digest/$(date +%Y-%m-%d)/obsidian/* \
 
 ### Design Philosophy
 
-**Hybrid Approach**: Use the best tool for each job
-- **Native tools** (pandoc, pdftotext) for document conversion → Quality
-- **Python** for APIs, scraping, logic → Flexibility
+**Modular and Extensible**: The toolkit is designed around a plugin architecture. The core orchestrator dynamically loads and runs scraper plugins, making it easy to add new sources without modifying the main application.
+
+**Hybrid Approach**: Uses the best tool for each job.
+- **Python** for APIs, scraping, and orchestration logic.
+- **Native tools** (`pandoc`, `pdftotext`) for high-quality document conversion.
 
 ### Pipeline
 
 ```
-1. Discovery & Scraping (Python)
-   ├─ HackerNews API
-   ├─ RSS feeds (feedparser)
-   └─ Reddit JSON API
+1. Discovery & Execution (research_digest.py)
+   ├─ Loads `research_config.yaml`
+   ├─ Discovers scraper plugins in `scrapers/`
+   └─ Runs enabled plugins in sequence
 
-2. Document Conversion (Native Tools)
-   ├─ PDF → pdftotext + pandoc
-   └─ DOCX → pandoc
+2. Scraping (Plugins)
+   ├─ Plugin (e.g., HNScraper) fetches content.
+   ├─ Checks `research_digest_state.db` to see if item is new.
+   ├─ If new, saves raw content to `research_digest/DATE/raw/`
+   └─ Adds new item's ID to the database.
 
-3. Processing (Python)
-   ├─ Obsidian formatting (YAML frontmatter)
-   ├─ Auto-tagging (keyword matching)
-   ├─ File splitting (NotebookLM limits)
-   └─ Deduplication (URL/title hashing)
+3. Processing (research_digest.py)
+   ├─ Document Conversion (optional, uses native tools)
+   ├─ Obsidian Formatting (`obsidian_prep.py`)
+   └─ File Splitting (`file_splitter.py`)
 
 4. Output
    ├─ Date-organized folders
-   ├─ Markdown with frontmatter
-   └─ Summary report
+   ├─ Clean, tagged markdown in `obsidian/`
+   └─ Summary `REPORT.md`
 ```
 
 ---
 
 ## 🔧 Configuration
 
-**`research_config.yaml`** - Main configuration file
+**`research_config.yaml`** is the main configuration file. The new structure is organized around a central `scrapers` block.
 
 Key sections:
-- `topics` - Your research keywords
-- `hackernews` - Search terms, thresholds
-- `rss_feeds` - Blog URLs to monitor
-- `reddit` - Subreddits to track
-- `processing` - Auto-tag, split, dedupe settings
+- `scrapers`: Enable, disable, and configure each plugin (e.g., `hackernews`, `rss`).
+- `topics`: Your research keywords for auto-tagging.
+- `processing`: Enable features like auto-tagging and file splitting.
 
 See [AUTOMATION_GUIDE.md](AUTOMATION_GUIDE.md) for detailed configuration options.
 

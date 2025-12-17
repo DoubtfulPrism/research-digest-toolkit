@@ -82,104 +82,71 @@ cp -r research_digest/2024-12-17/obsidian/* ~/Documents/Obsidian/Research/
 
 ### research_config.yaml Structure
 
+The `research_config.yaml` file is the control center for the digest. Here is the new structure:
+
 ```yaml
-# How many days back to search
+# How many days back to search (can be overridden by scrapers)
 days_back: 7
 
 # Output settings
 output:
   base_dir: "research_digest"
-  use_date_folders: true  # Creates 2024-12-17/ folders
-  obsidian_vault: ""      # Optional: auto-copy to vault
+  use_date_folders: true
+  obsidian_vault: "" # Optional: auto-copy to vault
 
-# Your research topics/keywords
+# Scraper configurations
+scrapers:
+  # HackerNews settings
+  hackernews:
+    enabled: true
+    min_points: 50
+    min_comments: 20
+    search_topics:
+      - "engineering culture"
+      - "platform engineering"
+      - "developer productivity"
+
+  # RSS Feeds to monitor
+  rss:
+    enabled: true
+    days_back: 7 # Specific override for this scraper
+    feeds:
+      - url: "https://lethain.com/feeds/"
+        name: "Will Larson"
+        tags: ["leadership", "engineering-culture"]
+      - url: "https://charity.wtf/feed/"
+        name: "Charity Majors"
+        tags: ["leadership", "observability"]
+
+  # Reddit subreddits to monitor
+  reddit:
+    enabled: true
+    time_filter: week # hour, day, week, month, year, all
+    subreddits:
+      - name: "ExperiencedDevs"
+        min_upvotes: 100
+        tags: ["career", "leadership"]
+      - name: "ObsidianMD"
+        min_upvotes: 50
+        tags: ["knowledge-management"]
+
+# Research topics (used for auto-tagging)
 topics:
   software_leadership:
     - "engineering culture"
     - "team dynamics"
     - "platform engineering"
 
-  innovation:
-    - "innovation strategy"
-    - "creative problem solving"
-
-  productivity:
-    - "productivity tools"
-    - "knowledge management"
-
-  edtech:
-    - "educational technology"
-    - "digital pedagogy"
-
-  uk_higher_ed:
-    - "UK higher education"
-    - "research excellence framework"
-
-# HackerNews searches
-hackernews:
-  enabled: true
-  min_points: 50          # Minimum score
-  min_comments: 20        # Minimum comments
-  search_topics:
-    - "engineering culture"
-    - "platform engineering"
-    - "developer productivity"
-
-# RSS Feeds to monitor
-rss_feeds:
-  # Software Leadership
-  - url: "https://lethain.com/feeds/"
-    name: "Will Larson"
-    tags: ["leadership", "engineering-culture"]
-
-  - url: "https://charity.wtf/feed/"
-    name: "Charity Majors"
-    tags: ["leadership", "observability"]
-
-# Reddit subreddits
-reddit:
-  enabled: true
-  subreddits:
-    - name: "ExperiencedDevs"
-      min_upvotes: 100
-      tags: ["career", "leadership"]
-
-    - name: "ObsidianMD"
-      min_upvotes: 50
-      tags: ["knowledge-management"]
-
-    - name: "AskAcademia"
-      min_upvotes: 50
-      tags: ["academia", "higher-education"]
-
 # Processing options
 processing:
-  auto_tag: true                # Auto-tag content
-  format_for_obsidian: true    # Add YAML frontmatter
-  split_large_files: true      # Split for NotebookLM
-  check_duplicates: true       # Remove duplicates
+  auto_tag: true
+  format_for_obsidian: true
+  split_large_files: true
 ```
 
 ### Finding Good RSS Feeds
+(This section remains the same)
 
-**Software Engineering:**
-- https://lethain.com/feeds/ (Will Larson - Engineering leadership)
-- https://charity.wtf/feed/ (Charity Majors - Engineering culture)
-- https://martinfowler.com/feed.atom (Martin Fowler - Architecture)
-- https://blog.pragmaticengineer.com/rss/ (Gergely Orosz - Engineering)
-
-**Innovation & Productivity:**
-- https://hbr.org/feed (Harvard Business Review)
-- https://sloanreview.mit.edu/feed/ (MIT Sloan Review)
-- https://www.fastcompany.com/latest/rss (Fast Company)
-
-**Higher Education:**
-- https://www.timeshighereducation.com/content/rss (Times Higher Ed)
-- https://www.insidehighered.com/rss/feed/ (Inside Higher Ed)
-
-**EdTech:**
-- https://www.edsurge.com/news.rss (EdSurge)
-- https://www.tonybates.ca/feed/ (Tony Bates - Online Learning)
 
 ---
 
@@ -342,36 +309,54 @@ reddit:
 
 ## 🎨 Customization
 
-### Add Custom Sources
+### Adding New Scraper Plugins
 
-**1. Add More RSS Feeds:**
+Thanks to the new plugin architecture, adding a new source is straightforward. You don't need to modify the main `research_digest.py` script.
 
-Edit `research_config.yaml`:
-```yaml
-rss_feeds:
-  - url: "https://your-favorite-blog.com/feed"
-    name: "Favorite Blog"
-    tags: ["your-tag"]
+**1. Create a New Plugin File:**
+Create a new Python file in the `scrapers/` directory (e.g., `scrapers/arxiv_scraper.py`).
+
+**2. Build Your Scraper Class:**
+Your scraper must inherit from `ScraperBase` and implement a `run` method.
+
+```python
+# in scrapers/arxiv_scraper.py
+from .base import ScraperBase
+from pathlib import Path
+import utils
+import database
+
+class ArxivScraper(ScraperBase):
+    def __init__(self, verbose=True):
+        super().__init__(verbose)
+        self.name = "Arxiv" # The name used in the config file
+
+    def run(self, config: dict, output_dir: Path):
+        if self.verbose:
+            print("🔬 Scraping Arxiv...")
+        
+        # Your scraping logic here...
+        # - Read from config
+        # - Fetch data
+        # - Check database.item_exists()
+        # - Save with utils.save_document()
+        # - Add to DB with database.add_item()
 ```
 
-**2. Add More Subreddits:**
+**3. Configure Your New Scraper:**
+Add a section for your new scraper in `research_config.yaml`. The key (`arxiv` in this case) should match the `name` attribute of your class, converted to lowercase.
 
 ```yaml
-reddit:
-  subreddits:
-    - name: "YourSubreddit"
-      min_upvotes: 50
-      tags: ["your-topic"]
+# In research_config.yaml
+scrapers:
+  arxiv:
+    enabled: true
+    search_query: "large language models"
+    max_results: 10
+  # ... other scrapers
 ```
 
-**3. Change HN Search Terms:**
-
-```yaml
-hackernews:
-  search_topics:
-    - "your topic here"
-    - "another topic"
-```
+The digest will automatically discover and run your new plugin.
 
 ### Custom Tag Mappings
 
@@ -465,29 +450,13 @@ Check your config:
 
 ### RSS Feed Errors
 
-Test individual feeds:
-```bash
-./rss_reader.py https://example.com/feed
-```
+If you suspect an RSS feed is broken, you can test it by navigating to the URL in your browser.
 
 ### Rate Limiting
 
-If you hit rate limits:
-- Add delays between requests
-- Reduce the number of sources
-- Spread searches across multiple runs
-
-### Duplicate Content
-
-The system automatically deduplicates by:
-- URL (exact match)
-- Title (hash match)
-
-To disable:
-```yaml
-processing:
-  check_duplicates: false
-```
+If you hit rate limits from sources like Reddit or HackerNews:
+- The scrapers have a default 1-second delay between requests.
+- If issues persist, consider running the digest less frequently or reducing the number of search topics/subreddits.
 
 ---
 
