@@ -51,6 +51,7 @@ The toolkit is composed of a central orchestrator, a set of scraper plugins, and
 ### Scraper Plugins (in `scrapers/` directory)
 | Plugin | Source | Purpose |
 |--------|--------|---------|
+| `ArxivScraper` | arXiv.org| Fetches scientific pre-prints based on keywords. |
 | `HNScraper` | HackerNews | Fetches discussions based on keywords and score. |
 | `RSSScraper` | RSS/Atom | Monitors blog and news feeds. |
 | `RedditScraper` | Reddit | Fetches posts from specified subreddits. |

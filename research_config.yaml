@@ -63,6 +63,17 @@ scrapers:
         min_upvotes: 50
         tags: ["academia", "higher-education"]
 
+  # ArXiv scientific paper scraper
+  arxiv:
+    enabled: true
+    search_queries:
+      - '"knowledge management" OR "personal knowledge management" OR "productivity"'
+      - '"AI" OR "LLM" OR "large language models" OR "Model Context Protocol"'
+      - '"edtech" OR "educational technology"'
+      - '"software development" AND ("maturity model" OR "approaches")'
+      - '("equity" OR "diversity" OR "inclusion") AND ("software development" OR "creative teams")'
+      - '"innovation" OR "creativity"'
+
 # Research topics and keywords (used for auto-tagging in obsidian_prep)
 topics:
   software_leadership:
