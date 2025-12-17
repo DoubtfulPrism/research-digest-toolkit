@@ -5,7 +5,7 @@ ArXiv Scraper Plugin for the Research Digest Toolkit.
 
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import database
 import utils
@@ -82,7 +82,7 @@ class ArxivScraper(ScraperBase):
         days_back = config.get('days_back', 30)
         max_results_per_query = config.get('max_results', 25)
         
-        cutoff_date = datetime.now(datetime.UTC) - timedelta(days=days_back)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_back)
 
         for query in queries:
             if self.verbose:
