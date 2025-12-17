@@ -1,0 +1,8 @@
+# Example video IDs/URLs for youtube_transcript.py
+# Lines starting with # are ignored
+# One video ID or URL per line
+
+# Example format - replace with actual video IDs:
+# dQw4w9WgXcQ
+# https://www.youtube.com/watch?v=dQw4w9WgXcQ
+# https://youtu.be/dQw4w9WgXcQ

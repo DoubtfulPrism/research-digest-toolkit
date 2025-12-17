@@ -1,0 +1,6 @@
+# Example URLs for web_scraper.py
+# Lines starting with # are ignored
+# One URL per line
+
+https://www.xda-developers.com/proton-launches-excel-and-google-sheets-alternative/
+https://www.xda-developers.com/im-never-going-back-to-adobe-acrobat-after-mastering-free-open-source-tool/

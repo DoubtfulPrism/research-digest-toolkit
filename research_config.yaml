@@ -1,0 +1,149 @@
+# Research Digest Configuration
+# Configure your automated research aggregation
+
+# Time range to search (in days)
+days_back: 7
+
+# Output settings
+output:
+  base_dir: "research_digest"
+  use_date_folders: true  # Creates folders like 2024-12-17/
+  obsidian_vault: ""  # Path to your Obsidian vault (optional)
+
+# Research topics and keywords
+topics:
+  software_leadership:
+    - "engineering culture"
+    - "team leadership"
+    - "tech lead"
+    - "engineering manager"
+    - "platform engineering"
+    - "developer productivity"
+    - "psychological safety"
+
+  innovation:
+    - "innovation"
+    - "creative problem solving"
+    - "design thinking"
+    - "R&D strategy"
+
+  productivity:
+    - "productivity tools"
+    - "knowledge management"
+    - "PKM"
+    - "obsidian"
+    - "note-taking"
+
+  edtech:
+    - "educational technology"
+    - "edtech"
+    - "learning platforms"
+    - "online learning"
+    - "digital pedagogy"
+
+  uk_higher_ed:
+    - "UK higher education"
+    - "university UK"
+    - "research excellence framework"
+    - "REF UK"
+
+# HackerNews settings
+hackernews:
+  enabled: true
+  min_points: 50
+  min_comments: 20
+  search_topics:
+    - "engineering culture"
+    - "platform engineering"
+    - "developer productivity"
+    - "team dynamics"
+    - "knowledge management"
+
+# RSS Feeds to monitor
+rss_feeds:
+  # Software Engineering Leadership
+  - url: "https://lethain.com/feeds/"
+    name: "Will Larson (Irrational Exuberance)"
+    tags: ["leadership", "engineering-culture"]
+
+  - url: "https://charity.wtf/feed/"
+    name: "Charity Majors"
+    tags: ["leadership", "observability", "engineering-culture"]
+
+  # - url: "https://martinfowler.com/feed.atom"
+  #   name: "Martin Fowler"
+  #   tags: ["architecture", "practices"]
+
+  # Add your favorite blogs here
+  # Uncomment and customize:
+  # - url: "https://example.com/feed"
+  #   name: "Blog Name"
+  #   tags: ["tag1", "tag2"]
+
+# Reddit subreddits to monitor
+reddit:
+  enabled: true
+  subreddits:
+    - name: "ExperiencedDevs"
+      min_upvotes: 100
+      tags: ["career", "leadership"]
+
+    - name: "cscareerquestions"
+      min_upvotes: 150
+      tags: ["career"]
+
+    - name: "productivity"
+      min_upvotes: 100
+      tags: ["productivity"]
+
+    - name: "ObsidianMD"
+      min_upvotes: 50
+      tags: ["knowledge-management", "tools"]
+
+    # UK Higher Ed specific
+    - name: "AskAcademia"
+      min_upvotes: 50
+      tags: ["academia", "higher-education"]
+
+# YouTube channels to monitor (via RSS)
+youtube:
+  enabled: false  # Set to true when you add channels
+  channels:
+    # Add YouTube channel IDs here
+    # Example:
+    # - id: "UC_channel_id_here"
+    #   name: "Channel Name"
+    #   tags: ["tag1", "tag2"]
+
+# Twitter/X (manual curation)
+# Note: Requires manual thread collection
+twitter:
+  enabled: false
+  threads_file: "bookmarked_threads.txt"
+
+# Processing options
+processing:
+  # Document conversion (uses native tools: pandoc, pdftotext)
+  convert_documents: true  # Convert PDFs/DOCX to markdown
+
+  auto_tag: true
+  format_for_obsidian: true
+  split_large_files: true
+  max_file_size: 400000  # characters (NotebookLM limit)
+
+  # Deduplication
+  check_duplicates: true
+  dedupe_by_title: true
+  dedupe_by_url: true
+
+# Output formats
+formats:
+  obsidian: true
+  markdown: true
+  plain_text: false
+
+# Notification/Report
+report:
+  generate_summary: true
+  email_report: false
+  email_address: ""

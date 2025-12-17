@@ -1,0 +1,9 @@
+# Example Twitter/X thread URLs for thread_reader.py
+# Lines starting with # are ignored
+# One thread URL per line
+
+# Format: https://twitter.com/username/status/TWEET_ID
+# Or: https://x.com/username/status/TWEET_ID
+
+# Add your thread URLs below:
+
