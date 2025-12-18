@@ -11,7 +11,10 @@ import sys
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
-    from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
+    from youtube_transcript_api._errors import (
+        NoTranscriptFound,
+        TranscriptsDisabled,
+    )
 except ImportError:
     print("Required package not found. Install with:")
     print("  pip install youtube-transcript-api")
