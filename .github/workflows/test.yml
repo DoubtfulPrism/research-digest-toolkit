@@ -99,7 +99,7 @@ jobs:
     - name: Check import sorting with isort
       continue-on-error: true
       run: |
-        isort --check-only --diff .
+        isort --check-only --diff . --profile black
 
     - name: Lint with ruff
       continue-on-error: true
