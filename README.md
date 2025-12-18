@@ -1,5 +1,10 @@
 # Research Digest Toolkit
 
+[![Tests](https://github.com/DoubtfulPrism/Scripts/actions/workflows/test.yml/badge.svg)](https://github.com/DoubtfulPrism/Scripts/actions/workflows/test.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **Automated research aggregation for software leadership, innovation, and academic research**
 
 > 🤖 **Vibecoded Project**: This project was developed through AI-assisted pair programming with Claude (Anthropic). The human provided requirements, domain expertise, and direction; Claude provided implementation, best practices, and code structure.
@@ -240,6 +245,56 @@ See [AUTOMATION_GUIDE.md](AUTOMATION_GUIDE.md) for detailed configuration option
 
 ---
 
+## 🧪 Testing & Quality
+
+### Automated Testing
+
+The project has comprehensive automated tests with **86 tests** and **89%+ coverage** on core modules.
+
+**Run tests:**
+```bash
+# All tests
+pytest tests/
+
+# With coverage report
+pytest tests/ --cov=. --cov-report=term-missing
+
+# Quick tests only
+pytest tests/ -m "not slow"
+```
+
+**Test coverage:**
+- `database.py` - 89% (deduplication logic)
+- `utils.py` - 83% (filename generation, HTML cleaning)
+- `scrapers/base.py` - 100% (plugin architecture)
+- 86 total tests across 4 test modules
+
+See [tests/README.md](tests/README.md) for detailed testing documentation.
+
+### Continuous Integration
+
+GitHub Actions automatically runs tests on:
+- Every push to main/develop branches
+- All pull requests
+- Weekly scheduled runs (regression testing)
+
+**CI workflows:**
+- **Full Test Suite** - Tests on Python 3.9, 3.10, 3.11, 3.12
+- **Quick Check** - Fast validation for feature branches
+- **Security Scan** - Dependency vulnerabilities and code security
+- **Code Quality** - Linting with ruff, black, isort
+
+See [.github/CI_SETUP.md](.github/CI_SETUP.md) for CI/CD documentation.
+
+### Code Quality
+
+- **Linting:** Ruff for code quality
+- **Formatting:** Black for consistent style
+- **Security:** Bandit for security scanning
+- **Dependencies:** Dependabot for automatic updates
+
+---
+
 ## 🤝 Contributing
 
 This is a personal research toolkit, but contributions welcome!
@@ -305,7 +360,9 @@ MIT License - See [LICENSE](LICENSE) file
 ## 📊 Stats
 
 - **10 CLI tools** - Each with `--help` documentation
-- **5,000+ lines** of well-documented Python
+- **3,500+ lines** of production code
+- **86 automated tests** - 89%+ coverage on core modules
+- **CI/CD pipelines** - GitHub Actions for quality assurance
 - **Native tool integration** - Best quality output
 - **YAML configuration** - Easy customization
 - **Cron-ready** - Set and forget automation
@@ -320,8 +377,10 @@ MIT License - See [LICENSE](LICENSE) file
 All tools are:
 - ✅ Fully functional
 - ✅ Documented
+- ✅ Comprehensively tested (86 automated tests)
+- ✅ CI/CD enabled (GitHub Actions)
 - ✅ Error handled
-- ✅ Tested on Fedora/Linux
+- ✅ Tested on Linux
 - ✅ Ready for automation
 
 ---

@@ -15,3 +15,7 @@ PyPDF2>=3.0.0
 
 # Scraper-specific dependencies
 arxiv>=2.1.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0

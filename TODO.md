@@ -4,36 +4,62 @@ This document outlines potential improvements and new features for the Research 
 
 ---
 
-## 🎯 Priority
+## 🎯 Current Priorities
 
-1.  **Implement Persistent State Database**: Highest impact for performance and efficiency.
-2.  **Create a Unified "Plugin" Architecture**: Best for long-term extensibility.
-3.  **Consolidate Common Code**: Improves maintainability.
-4.  **Add New Content Sources**: Expands the toolkit's reach.
+1.  **Add Automated Testing**: Foundation for quality assurance and confident development.
+2.  **Formal Packaging**: Create `pyproject.toml` for proper distribution.
+3.  **Add New Content Sources**: Expand toolkit reach (GitHub, Mastodon).
+4.  **Enhanced Processing**: AI summarization, cross-linking, NER.
 
 ---
 
-## ✅ TODO List
+## ✅ Completed
 
 ### Architectural Improvements
 
-- [ ] **Implement Persistent State Database**
-    - [ ] Create a `database.py` module using `sqlite3` to manage state.
-    - [ ] The database should store a unique ID (URL or item ID) for every processed item.
-    - [ ] Modify scrapers (`rss_reader`, `hn_scraper`, etc.) to check the database before downloading content.
-    - [ ] If an item already exists in the database, the scraper should skip it.
-    - [ ] Add successfully downloaded items to the database.
-    - [ ] Remove the old, inefficient `deduplicate` method from `research_digest.py`.
+- [x] **Implement Persistent State Database** *(Completed 2025-12-17)*
+    - [x] Create a `database.py` module using `sqlite3` to manage state.
+    - [x] The database stores a unique ID (URL or item ID) for every processed item.
+    - [x] All scrapers check the database before downloading content.
+    - [x] Items already in the database are skipped.
+    - [x] Successfully downloaded items are added to the database.
+    - [x] Database tracks 359+ items across 4 sources.
 
-- [ ] **Create a Unified "Plugin" Architecture**
-    - [ ] Design a base `Scraper` class that all scrapers will inherit from.
-    - [ ] Refactor each scraper script into a plugin class in a `scrapers/` directory.
-    - [ ] Modify `research_digest.py` to dynamically load and run scraper plugins based on the config file.
+- [x] **Create a Unified "Plugin" Architecture** *(Completed 2025-12-17)*
+    - [x] Design a base `Scraper` class that all scrapers inherit from.
+    - [x] Refactor each scraper script into a plugin class in a `scrapers/` directory.
+    - [x] Modify `research_digest.py` to dynamically load and run scraper plugins based on the config file.
+    - [x] 4 scrapers implemented: ArXiv, HackerNews, RSS, Reddit.
 
-- [ ] **Consolidate Common Code into a `utils` Module**
-    - [ ] Create a `utils.py` file.
-    - [ ] Move shared logic (e.g., filename sanitization, file saving, HTTP requests) into utility functions in this module.
-    - [ ] Refactor the scrapers to import and use these common functions.
+- [x] **Consolidate Common Code into a `utils` Module** *(Completed 2025-12-17)*
+    - [x] Create a `utils.py` file.
+    - [x] Move shared logic (e.g., filename sanitization, HTML cleaning) into utility functions.
+    - [x] Refactor the scrapers to import and use these common functions.
+
+- [x] **Add ArXiv Content Source** *(Completed 2025-12-17)*
+    - [x] Scraper for academic pre-prints by category or keyword.
+    - [x] Configurable search queries and result limits.
+    - [x] Timezone-aware datetime handling.
+
+---
+
+## 🚀 TODO List
+
+### Quality Assurance
+
+- [x] **Add Automated Testing** *(Completed 2025-12-18)*
+    - [x] Set up pytest infrastructure with `tests/` directory.
+    - [x] Write tests for `database.py` (deduplication, state tracking).
+    - [x] Write tests for plugin loading mechanism in `research_digest.py`.
+    - [x] Write tests for `utils.py` functions (sanitization, HTML cleaning).
+    - [x] Write tests for base scraper class.
+    - [x] Add integration tests for end-to-end workflows.
+    - [x] Set up GitHub Actions CI/CD pipeline.
+    - [x] 86 tests with 89%+ coverage on core modules.
+    - [x] CI runs on Python 3.9, 3.10, 3.11, 3.12.
+    - [x] Automated code quality checks and security scanning.
+
+### Architectural Improvements
 
 - [ ] **Improve Dependency and Execution Management**
     - [ ] Create a `pyproject.toml` file to formally package the project.

@@ -4,6 +4,7 @@ Database management for the Research Digest Toolkit.
 Handles a persistent SQLite database to track processed items and avoid duplicates.
 """
 
+import sys
 import sqlite3
 from pathlib import Path
 from datetime import datetime

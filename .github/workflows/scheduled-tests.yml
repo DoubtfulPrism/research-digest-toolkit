@@ -1,0 +1,54 @@
+name: Scheduled Tests
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  scheduled-test:
+    name: Weekly Full Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pandoc poppler-utils
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run comprehensive tests
+      run: |
+        pytest tests/ -v --tb=long --cov=. --cov-report=html --cov-report=term
+
+    - name: Check for outdated dependencies
+      run: |
+        pip list --outdated
+
+    - name: Upload coverage report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: weekly-coverage-report
+        path: htmlcov/
+        retention-days: 90
+
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "Weekly tests failed! Please investigate."
+        echo "View the workflow run for details."
