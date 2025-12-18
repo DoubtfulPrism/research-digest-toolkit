@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Utility functions shared across the Research Digest Toolkit.
-"""
+"""Utility functions shared across the Research Digest Toolkit."""
 
 import re
 import sys
@@ -9,8 +7,7 @@ from pathlib import Path
 
 
 def generate_filename(source: str, title: str, unique_id: str) -> str:
-    """
-    Generates a sanitized, consistent filename for a piece of content.
+    """Generates a sanitized, consistent filename for a piece of content.
 
     Args:
         source: The source of the content (e.g., 'hn', 'rss').
@@ -33,8 +30,7 @@ def generate_filename(source: str, title: str, unique_id: str) -> str:
 
 
 def save_document(filepath: Path, content: str, verbose: bool = True):
-    """
-    Saves content to a file after ensuring the directory exists.
+    """Saves content to a file after ensuring the directory exists.
 
     Args:
         filepath: The full Path object for the output file.
@@ -64,8 +60,7 @@ def save_document(filepath: Path, content: str, verbose: bool = True):
 
 
 def clean_html(html_text: str) -> str:
-    """
-    Performs basic cleaning of HTML text.
+    """Performs basic cleaning of HTML text.
 
     Removes common tags, decodes basic entities, and normalizes whitespace.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-File Converter - Convert between text document formats
+"""File Converter - Convert between text document formats.
+
 Supports: txt, md, html, docx, pdf
 
 For better conversion quality, consider using native tools:
@@ -41,8 +41,7 @@ except ImportError:
 
 
 def txt_to_md(text: str, title: str = None) -> str:
-    """
-    Convert plain text to markdown with basic formatting detection.
+    """Convert plain text to markdown with basic formatting detection.
 
     Args:
         text: Plain text content
@@ -73,8 +72,7 @@ def txt_to_md(text: str, title: str = None) -> str:
 
 
 def html_to_md(html: str) -> str:
-    """
-    Convert HTML to markdown.
+    """Convert HTML to markdown.
 
     Args:
         html: HTML content
@@ -94,8 +92,7 @@ def html_to_md(html: str) -> str:
 
 
 def md_to_txt(markdown: str) -> str:
-    """
-    Convert markdown to plain text by stripping formatting.
+    """Convert markdown to plain text by stripping formatting.
 
     Args:
         markdown: Markdown content
@@ -141,8 +138,7 @@ def md_to_txt(markdown: str) -> str:
 
 
 def docx_to_md(path: str) -> str:
-    """
-    Convert DOCX to markdown.
+    """Convert DOCX to markdown.
 
     Args:
         path: Path to DOCX file
@@ -197,8 +193,7 @@ def docx_to_md(path: str) -> str:
 
 
 def docx_to_txt(path: str) -> str:
-    """
-    Convert DOCX to plain text.
+    """Convert DOCX to plain text.
 
     Args:
         path: Path to DOCX file
@@ -219,8 +214,7 @@ def docx_to_txt(path: str) -> str:
 
 
 def md_to_docx(markdown: str, output_path: str) -> None:
-    """
-    Convert markdown to DOCX.
+    """Convert markdown to DOCX.
 
     Args:
         markdown: Markdown content
@@ -275,8 +269,7 @@ def md_to_docx(markdown: str, output_path: str) -> None:
 
 
 def pdf_to_txt(path: str) -> str:
-    """
-    Convert PDF to plain text using PyPDF2.
+    """Convert PDF to plain text using PyPDF2.
 
     Note: For better quality, use system tools:
       pdftotext input.pdf output.txt
@@ -310,8 +303,7 @@ def pdf_to_txt(path: str) -> str:
 
 
 def pdf_to_md(path: str) -> str:
-    """
-    Convert PDF to markdown.
+    """Convert PDF to markdown.
 
     Args:
         path: Path to PDF file
@@ -324,8 +316,7 @@ def pdf_to_md(path: str) -> str:
 
 
 def get_format(path: str) -> str:
-    """
-    Detect file format from extension.
+    """Detect file format from extension.
 
     Args:
         path: File path
@@ -347,8 +338,7 @@ def get_format(path: str) -> str:
 
 
 def convert_file(input_path: str, output_format: str) -> tuple:
-    """
-    Convert a file to the specified format.
+    """Convert a file to the specified format.
 
     Args:
         input_path: Path to input file

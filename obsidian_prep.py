@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Obsidian Formatter - Convert scraped content to Obsidian format
+"""Obsidian Formatter - Convert scraped content to Obsidian format.
+
 Adds YAML frontmatter, auto-tags, and creates backlinks.
 """
 
@@ -57,8 +57,7 @@ DEFAULT_TAG_MAP = {
 
 
 def detect_source_type(file_path: Path, content: str) -> str:
-    """
-    Detect the source type of content.
+    """Detect the source type of content.
 
     Args:
         file_path: Path to file
@@ -89,8 +88,7 @@ def detect_source_type(file_path: Path, content: str) -> str:
 
 
 def extract_existing_frontmatter(content: str) -> tuple:
-    """
-    Extract existing YAML frontmatter if present.
+    """Extract existing YAML frontmatter if present.
 
     Args:
         content: File content
@@ -124,8 +122,7 @@ def extract_existing_frontmatter(content: str) -> tuple:
 
 
 def auto_tag_content(content: str, tag_map: dict = None, max_tags: int = 10) -> list:
-    """
-    Automatically tag content based on keywords.
+    """Automatically tag content based on keywords.
 
     Args:
         content: Text content
@@ -151,8 +148,7 @@ def auto_tag_content(content: str, tag_map: dict = None, max_tags: int = 10) -> 
 
 
 def extract_title(content: str, file_path: Path) -> str:
-    """
-    Extract or generate a title for the content.
+    """Extract or generate a title for the content.
 
     Args:
         content: File content
@@ -178,8 +174,7 @@ def extract_title(content: str, file_path: Path) -> str:
 
 
 def extract_url(content: str, source_type: str) -> str:
-    """
-    Extract source URL from content.
+    """Extract source URL from content.
 
     Args:
         content: File content
@@ -206,8 +201,7 @@ def extract_url(content: str, source_type: str) -> str:
 
 
 def create_frontmatter(file_path: Path, content: str, args: argparse.Namespace) -> dict:
-    """
-    Create YAML frontmatter for Obsidian.
+    """Create YAML frontmatter for Obsidian.
 
     Args:
         file_path: Path to file
@@ -271,8 +265,7 @@ def create_frontmatter(file_path: Path, content: str, args: argparse.Namespace) 
 
 
 def format_frontmatter(frontmatter: dict) -> str:
-    """
-    Format frontmatter dictionary as YAML.
+    """Format frontmatter dictionary as YAML.
 
     Args:
         frontmatter: Frontmatter dictionary
@@ -297,8 +290,7 @@ def format_frontmatter(frontmatter: dict) -> str:
 
 
 def add_backlinks(content: str, backlinks: list) -> str:
-    """
-    Add backlinks section to content.
+    """Add backlinks section to content.
 
     Args:
         content: File content
@@ -319,8 +311,7 @@ def add_backlinks(content: str, backlinks: list) -> str:
 
 
 def process_file(file_path: Path, output_path: Path, args: argparse.Namespace) -> bool:
-    """
-    Process a single file for Obsidian.
+    """Process a single file for Obsidian.
 
     Args:
         file_path: Input file path

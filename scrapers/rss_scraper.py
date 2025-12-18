@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-RSS Scraper Plugin for the Research Digest Toolkit.
-"""
+"""RSS Scraper Plugin for the Research Digest Toolkit."""
 
 import re
 import sys
@@ -98,17 +96,14 @@ tags: [rss, {', '.join(tags) if tags else ''}]
 
 
 class RSSScraper(ScraperBase):
-    """
-    Scrapes content from a list of RSS feeds.
-    """
+    """Scrapes content from a list of RSS feeds."""
 
     def __init__(self, verbose: bool = True):
         super().__init__(verbose)
         self.name = "RSS"
 
     def run(self, config: dict, output_dir: Path):
-        """
-        Processes RSS feeds based on the provided configuration.
+        """Processes RSS feeds based on the provided configuration.
 
         Args:
             config: The scraper-specific configuration dictionary.

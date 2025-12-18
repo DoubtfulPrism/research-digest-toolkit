@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-File Splitter - Split large text files into smaller chunks
+"""Split large text files into smaller chunks.
+
 Designed for preparing large documents for NotebookLM (400k char limit).
 """
 
@@ -41,8 +41,7 @@ SUPPORTED_EXTENSIONS = {
 
 
 def is_text_file(filepath: str, check_extensions: bool = True) -> bool:
-    """
-    Check if file is a supported text file.
+    """Check if file is a supported text file.
 
     Args:
         filepath: Path to file
@@ -63,8 +62,7 @@ def split_file_by_words(
     max_chars: int = DEFAULT_MAX_CHARS,
     verbose: bool = True,
 ) -> int:
-    """
-    Split a file into chunks by word boundaries.
+    """Split a file into chunks by word boundaries.
 
     Args:
         input_path: Path to input file
@@ -159,8 +157,7 @@ def split_file_by_lines(
     max_chars: int = DEFAULT_MAX_CHARS,
     verbose: bool = True,
 ) -> int:
-    """
-    Split a file into chunks by line boundaries (preserves line structure).
+    """Split a file into chunks by line boundaries (preserves line structure).
 
     Args:
         input_path: Path to input file
@@ -256,8 +253,7 @@ def process_files(
     check_extensions: bool = True,
     verbose: bool = True,
 ) -> dict:
-    """
-    Process multiple files and split them.
+    """Process multiple files and split them.
 
     Args:
         input_paths: List of file paths to process
@@ -325,8 +321,7 @@ def process_directory(
     check_extensions: bool = True,
     verbose: bool = True,
 ) -> dict:
-    """
-    Process all files in a directory.
+    """Process all files in a directory.
 
     Args:
         input_dir: Input directory

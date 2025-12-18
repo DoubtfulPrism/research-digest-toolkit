@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Twitter/X Thread Reader - Download and format Twitter threads
+"""Twitter/X Thread Reader - Download and format Twitter threads.
+
 Uses Nitter (privacy-focused Twitter front-end) to avoid API costs.
 """
 
@@ -26,8 +26,7 @@ DEFAULT_OUTPUT_DIR = "notebooklm_sources_threads"
 
 
 def extract_tweet_id(url: str) -> tuple:
-    """
-    Extract username and tweet ID from Twitter/X URL.
+    """Extract username and tweet ID from Twitter/X URL.
 
     Args:
         url: Twitter/X URL
@@ -58,8 +57,7 @@ def extract_tweet_id(url: str) -> tuple:
 def try_nitter_instance(
     instance: str, username: str, tweet_id: str, timeout: int = 10
 ) -> tuple:
-    """
-    Try to fetch thread from a Nitter instance.
+    """Try to fetch thread from a Nitter instance.
 
     Args:
         instance: Nitter instance domain
@@ -92,8 +90,7 @@ def try_nitter_instance(
 
 
 def fetch_thread(twitter_url: str, verbose: bool = True) -> str:
-    """
-    Fetch thread content using Nitter instances.
+    """Fetch thread content using Nitter instances.
 
     Args:
         twitter_url: Twitter/X URL
@@ -133,8 +130,7 @@ def fetch_thread(twitter_url: str, verbose: bool = True) -> str:
 
 
 def parse_thread(html_content: str) -> dict:
-    """
-    Parse thread from Nitter HTML.
+    """Parse thread from Nitter HTML.
 
     Args:
         html_content: HTML from Nitter
@@ -185,8 +181,7 @@ def parse_thread(html_content: str) -> dict:
 
 
 def format_thread(thread_data: dict, format_type: str = "markdown") -> str:
-    """
-    Format thread data for output.
+    """Format thread data for output.
 
     Args:
         thread_data: Parsed thread data
@@ -244,8 +239,7 @@ Date: {thread_data['date']}
 
 
 def generate_filename(thread_data: dict, tweet_id: str) -> str:
-    """
-    Generate a filename for the thread.
+    """Generate a filename for the thread.
 
     Args:
         thread_data: Parsed thread data
@@ -278,8 +272,7 @@ def generate_filename(thread_data: dict, tweet_id: str) -> str:
 def process_thread(
     url: str, output_dir: str, format_type: str = "markdown", verbose: bool = True
 ) -> str:
-    """
-    Process a single thread URL.
+    """Process a single thread URL.
 
     Args:
         url: Twitter/X URL

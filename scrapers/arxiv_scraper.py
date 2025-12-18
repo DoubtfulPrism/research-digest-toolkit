@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-ArXiv Scraper Plugin for the Research Digest Toolkit.
-"""
+"""ArXiv Scraper Plugin for the Research Digest Toolkit."""
 
 import sys
 from datetime import datetime, timedelta, timezone
@@ -60,17 +58,14 @@ tags: [arxiv, paper, {', '.join(paper.categories)}]
 
 
 class ArxivScraper(ScraperBase):
-    """
-    Scrapes ArXiv for recent papers matching configured search queries.
-    """
+    """Scrapes ArXiv for recent papers matching configured search queries."""
 
     def __init__(self, verbose: bool = True):
         super().__init__(verbose)
         self.name = "Arxiv"
 
     def run(self, config: dict, output_dir: Path):
-        """
-        Processes ArXiv search queries based on the provided configuration.
+        """Processes ArXiv search queries based on the provided configuration.
 
         Args:
             config: The scraper-specific configuration dictionary.

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Reddit Scraper Plugin for the Research Digest Toolkit.
-"""
+"""Reddit Scraper Plugin for the Research Digest Toolkit."""
 
 import sys
 import time
@@ -118,15 +116,19 @@ tags: [reddit, {subreddit}{', ' if tags else ''}{', '.join(tags) if tags else ''
 
 
 class RedditScraper(ScraperBase):
-    """
-    Scrapes top posts from a list of subreddits.
-    """
+    """Scrapes top posts from a list of subreddits."""
 
     def __init__(self, verbose: bool = True):
         super().__init__(verbose)
         self.name = "Reddit"
 
     def run(self, config: dict, output_dir: Path):
+        """Processes subreddits based on the provided configuration.
+
+        Args:
+            config: The scraper-specific configuration dictionary.
+            output_dir: The base directory Path object for raw output.
+        """
         if self.verbose:
             print("💬 Scraping Reddit...")
 

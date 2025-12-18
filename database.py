@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Database management for the Research Digest Toolkit.
+"""Database management for the Research Digest Toolkit.
+
 Handles a persistent SQLite database to track processed items and avoid duplicates.
 """
 
@@ -20,9 +20,9 @@ def get_connection():
 
 
 def init_db():
-    """
-    Initializes the database and creates the 'processed_items' table if it
-    doesn't already exist.
+    """Initializes the database and creates the 'processed_items' table.
+
+    The table is only created if it doesn't already exist.
     """
     try:
         con = get_connection()
@@ -47,8 +47,7 @@ def init_db():
 
 
 def item_exists(source: str, unique_id: str) -> bool:
-    """
-    Checks if an item with the given source and unique_id already exists.
+    """Checks if an item with the given source and unique_id already exists.
 
     Args:
         source: The source of the content (e.g., 'hn', 'rss', 'reddit').
@@ -75,8 +74,7 @@ def item_exists(source: str, unique_id: str) -> bool:
 
 
 def add_item(source: str, unique_id: str):
-    """
-    Adds a new processed item to the database.
+    """Adds a new processed item to the database.
 
     Args:
         source: The source of the content (e.g., 'hn', 'rss', 'reddit').

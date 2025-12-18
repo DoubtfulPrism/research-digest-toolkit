@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-YouTube Transcript Downloader
+"""YouTube Transcript Downloader.
+
 Downloads and formats YouTube video transcripts for NotebookLM.
 """
 
@@ -11,10 +11,7 @@ import sys
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
-    from youtube_transcript_api._errors import (
-        NoTranscriptFound,
-        TranscriptsDisabled,
-    )
+    from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 except ImportError:
     print("Required package not found. Install with:")
     print("  pip install youtube-transcript-api")
@@ -22,8 +19,7 @@ except ImportError:
 
 
 def extract_video_id(url_or_id: str) -> str:
-    """
-    Extract YouTube video ID from URL or validate video ID.
+    """Extract YouTube video ID from URL or validate video ID.
 
     Args:
         url_or_id: YouTube URL or video ID
@@ -46,8 +42,7 @@ def extract_video_id(url_or_id: str) -> str:
 
 
 def format_timestamp(seconds: float) -> str:
-    """
-    Format seconds into HH:MM:SS or MM:SS timestamp.
+    """Format seconds into HH:MM:SS or MM:SS timestamp.
 
     Args:
         seconds: Time in seconds
@@ -66,8 +61,7 @@ def format_timestamp(seconds: float) -> str:
 def get_transcript(
     video_id: str, languages: list = None, include_timestamps: bool = False
 ) -> str:
-    """
-    Fetch and format transcript for a YouTube video.
+    """Fetch and format transcript for a YouTube video.
 
     Args:
         video_id: YouTube video ID
@@ -130,8 +124,7 @@ def get_transcript(
 
 
 def list_available_languages(video_id: str) -> None:
-    """
-    List all available transcript languages for a video.
+    """List all available transcript languages for a video.
 
     Args:
         video_id: YouTube video ID
@@ -163,8 +156,7 @@ def list_available_languages(video_id: str) -> None:
 
 
 def generate_filename(video_id: str, extension: str = "txt") -> str:
-    """
-    Generate a filename for the transcript.
+    """Generate a filename for the transcript.
 
     Args:
         video_id: YouTube video ID
@@ -182,8 +174,7 @@ def save_transcript(
     output_path: str = None,
     output_dir: str = "notebooklm_sources_yt",
 ) -> str:
-    """
-    Save transcript to file.
+    """Save transcript to file.
 
     Args:
         video_id: YouTube video ID

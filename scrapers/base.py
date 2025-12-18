@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
-"""
-Base class for all scraper plugins.
-"""
+"""Base class for all scraper plugins."""
 
 from pathlib import Path
 
 
 class ScraperBase:
-    """
-    All scrapers should inherit from this class.
-    """
+    """All scrapers should inherit from this class."""
 
     def __init__(self, verbose: bool = True):
-        """
-        Initializes the scraper.
+        """Initializes the scraper.
 
         Args:
             verbose: Flag for enabling detailed output.
@@ -22,8 +17,7 @@ class ScraperBase:
         self.verbose = verbose
 
     def run(self, config: dict, output_dir: Path):
-        """
-        The main method to run the scraper. This must be implemented by subclasses.
+        """The main method to run the scraper. This must be implemented by subclasses.
 
         Args:
             config: The scraper-specific configuration dictionary.

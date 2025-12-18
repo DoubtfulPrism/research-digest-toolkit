@@ -334,7 +334,7 @@ class ArxivScraper(ScraperBase):
     def run(self, config: dict, output_dir: Path):
         if self.verbose:
             print("🔬 Scraping Arxiv...")
-        
+
         # Your scraping logic here...
         # - Read from config
         # - Fetch data

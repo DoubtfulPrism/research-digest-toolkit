@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-HackerNews Scraper Plugin for the Research Digest Toolkit.
-"""
+"""HackerNews Scraper Plugin for the Research Digest Toolkit."""
 
 import sys
 import time
@@ -143,9 +141,7 @@ tags: [hackernews, discussion]
 
 
 class HNScraper(ScraperBase):
-    """
-    Scrapes Hacker News for discussions matching configured topics.
-    """
+    """Scrapes Hacker News for discussions matching configured topics."""
 
     def __init__(self, verbose: bool = True):
         super().__init__(verbose)
@@ -153,6 +149,12 @@ class HNScraper(ScraperBase):
         self.client = _HNClient()
 
     def run(self, config: dict, output_dir: Path):
+        """Processes Hacker News search topics based on the provided configuration.
+
+        Args:
+            config: The scraper-specific configuration dictionary.
+            output_dir: The base directory Path object for raw output.
+        """
         if self.verbose:
             print("📰 Scraping Hacker News...")
 

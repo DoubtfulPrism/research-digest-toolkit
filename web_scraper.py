@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Web Scraper - Extract clean text content from web pages
+"""Web Scraper - Extract clean text content from web pages.
+
 Scrapes web pages and saves them as clean text files suitable for NotebookLM.
 """
 
@@ -14,8 +14,7 @@ from bs4 import BeautifulSoup
 
 
 def clean_html_content(html_content):
-    """
-    Clean HTML content by removing unwanted elements and excess whitespace.
+    """Clean HTML content by removing unwanted elements and excess whitespace.
 
     Args:
         html_content: Raw HTML content
@@ -52,8 +51,7 @@ def clean_html_content(html_content):
 
 
 def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
-    """
-    Scrape URLs and save cleaned content to text files.
+    """Scrape URLs and save cleaned content to text files.
 
     Args:
         urls: List of URLs to scrape

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Research Digest - Automated research aggregation pipeline
+"""Research Digest - Automated research aggregation pipeline.
+
 Discovers, scrapes, and organizes research content from multiple sources.
 """
 
