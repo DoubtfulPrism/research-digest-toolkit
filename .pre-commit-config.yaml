@@ -67,6 +67,28 @@ repos:
       - id: python-no-eval
       - id: python-use-type-annotations
 
+# Custom local hooks
+  - repo: local
+    hooks:
+      # Run tests before commit
+      # - id: pytest-check
+      #   name: pytest-check
+      #   entry: pytest
+      #   args: ['tests/', '-q', '--tb=no', '--maxfail=3']
+      #   language: system
+      #   pass_filenames: false
+      #   always_run: true
+      #   stages: [pre-commit]
+
+      # Check test coverage for modified files
+      - id: pytest-cov
+        name: pytest-coverage
+        entry: bash -c 'pytest tests/ --cov=. --cov-report=term-missing:skip-covered --cov-fail-under=85 -q'
+        language: system
+        pass_filenames: false
+        always_run: false
+        stages: [pre-push]
+
 
 
 # Configuration
