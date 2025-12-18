@@ -5,10 +5,12 @@ Base class for all scraper plugins.
 
 from pathlib import Path
 
+
 class ScraperBase:
     """
     All scrapers should inherit from this class.
     """
+
     def __init__(self, verbose: bool = True):
         """
         Initializes the scraper.
@@ -27,4 +29,6 @@ class ScraperBase:
             config: The scraper-specific configuration dictionary.
             output_dir: The base directory Path object for raw output.
         """
-        raise NotImplementedError("The 'run' method must be implemented by the scraper plugin.")
+        raise NotImplementedError(
+            "The 'run' method must be implemented by the scraper plugin."
+        )

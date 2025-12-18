@@ -5,63 +5,54 @@ Adds YAML frontmatter, auto-tags, and creates backlinks.
 """
 
 import argparse
-import sys
 import re
-from pathlib import Path
+import sys
 from datetime import datetime
-import hashlib
-
+from pathlib import Path
 
 # Default tag mapping - keywords to tags for software leadership research
 DEFAULT_TAG_MAP = {
     # Engineering Culture
-    'culture': ['engineering-culture', 'team-culture'],
-    'remote': ['remote-work', 'distributed-teams'],
-    'onboarding': ['onboarding', 'team-building'],
-    'psychological safety': ['psychological-safety', 'team-dynamics'],
-    'feedback': ['feedback', 'communication'],
-
+    "culture": ["engineering-culture", "team-culture"],
+    "remote": ["remote-work", "distributed-teams"],
+    "onboarding": ["onboarding", "team-building", "knowledge-transfer"],
+    "psychological safety": ["psychological-safety", "team-dynamics"],
+    "feedback": ["feedback", "communication"],
     # Dev Practices
-    'testing': ['testing', 'quality'],
-    'ci/cd': ['cicd', 'devops'],
-    'code review': ['code-review', 'practices'],
-    'refactoring': ['refactoring', 'technical-debt'],
-    'pair programming': ['pair-programming', 'practices'],
-    'tdd': ['tdd', 'testing'],
-
+    "testing": ["testing", "quality"],
+    "ci/cd": ["cicd", "devops"],
+    "code review": ["code-review", "practices"],
+    "refactoring": ["refactoring", "technical-debt"],
+    "pair programming": ["pair-programming", "practices"],
+    "tdd": ["tdd", "testing"],
     # Innovation & Strategy
-    'innovation': ['innovation', 'strategy'],
-    'platform': ['platform-engineering', 'infrastructure'],
-    'api': ['api-design', 'architecture'],
-    'microservices': ['microservices', 'architecture'],
-    'architecture': ['architecture', 'design'],
-
+    "innovation": ["innovation", "strategy"],
+    "platform": ["platform-engineering", "infrastructure"],
+    "api": ["api-design", "architecture"],
+    "microservices": ["microservices", "architecture"],
+    "architecture": ["architecture", "design"],
     # Productivity & Tools
-    'productivity': ['productivity', 'efficiency'],
-    'automation': ['automation', 'tooling'],
-    'ai': ['ai', 'ml', 'automation'],
-    'copilot': ['ai-assisted', 'tools'],
-    'ide': ['tools', 'developer-experience'],
-
+    "productivity": ["productivity", "efficiency"],
+    "automation": ["automation", "tooling"],
+    "ai": ["ai", "ml", "automation"],
+    "copilot": ["ai-assisted", "tools"],
+    "ide": ["tools", "developer-experience"],
     # Knowledge Management
-    'documentation': ['documentation', 'knowledge-management'],
-    'knowledge': ['knowledge-management', 'learning'],
-    'learning': ['learning', 'professional-development'],
-    'onboarding': ['onboarding', 'knowledge-transfer'],
-
+    "documentation": ["documentation", "knowledge-management"],
+    "knowledge": ["knowledge-management", "learning"],
+    "learning": ["learning", "professional-development"],
     # Team Management
-    'leadership': ['leadership', 'management'],
-    'hiring': ['hiring', 'recruiting'],
-    'career': ['career-development', 'growth'],
-    '1:1': ['one-on-ones', 'management'],
-    'performance': ['performance-management', 'feedback'],
-
+    "leadership": ["leadership", "management"],
+    "hiring": ["hiring", "recruiting"],
+    "career": ["career-development", "growth"],
+    "1:1": ["one-on-ones", "management"],
+    "performance": ["performance-management", "feedback"],
     # Process
-    'agile': ['agile', 'process'],
-    'scrum': ['scrum', 'agile'],
-    'kanban': ['kanban', 'process'],
-    'sprint': ['sprint', 'agile'],
-    'retro': ['retrospective', 'process'],
+    "agile": ["agile", "process"],
+    "scrum": ["scrum", "agile"],
+    "kanban": ["kanban", "process"],
+    "sprint": ["sprint", "agile"],
+    "retro": ["retrospective", "process"],
 }
 
 
@@ -77,24 +68,24 @@ def detect_source_type(file_path: Path, content: str) -> str:
         Source type identifier
     """
     # Check file path
-    if 'sources_web' in str(file_path):
-        return 'web'
-    elif 'sources_yt' in str(file_path):
-        return 'youtube'
-    elif 'sources_threads' in str(file_path):
-        return 'twitter'
-    elif 'sources_hn' in str(file_path) or file_path.name.startswith('hn_'):
-        return 'hackernews'
+    if "sources_web" in str(file_path):
+        return "web"
+    elif "sources_yt" in str(file_path):
+        return "youtube"
+    elif "sources_threads" in str(file_path):
+        return "twitter"
+    elif "sources_hn" in str(file_path) or file_path.name.startswith("hn_"):
+        return "hackernews"
 
     # Check content markers
-    if 'YouTube Video Transcript' in content:
-        return 'youtube'
-    elif 'Twitter Thread' in content or 'type: twitter-thread' in content:
-        return 'twitter'
-    elif 'type: hackernews' in content or 'HN Discussion:' in content:
-        return 'hackernews'
+    if "YouTube Video Transcript" in content:
+        return "youtube"
+    elif "Twitter Thread" in content or "type: twitter-thread" in content:
+        return "twitter"
+    elif "type: hackernews" in content or "HN Discussion:" in content:
+        return "hackernews"
 
-    return 'web'
+    return "web"
 
 
 def extract_existing_frontmatter(content: str) -> tuple:
@@ -110,20 +101,20 @@ def extract_existing_frontmatter(content: str) -> tuple:
     frontmatter = {}
     body = content
 
-    if content.startswith('---\n'):
-        parts = content.split('---\n', 2)
+    if content.startswith("---\n"):
+        parts = content.split("---\n", 2)
         if len(parts) >= 3:
             # Parse YAML (basic parsing)
-            yaml_lines = parts[1].strip().split('\n')
+            yaml_lines = parts[1].strip().split("\n")
             for line in yaml_lines:
-                if ':' in line:
-                    key, value = line.split(':', 1)
+                if ":" in line:
+                    key, value = line.split(":", 1)
                     key = key.strip()
                     value = value.strip()
 
                     # Handle arrays
-                    if value.startswith('[') and value.endswith(']'):
-                        value = [v.strip() for v in value[1:-1].split(',')]
+                    if value.startswith("[") and value.endswith("]"):
+                        value = [v.strip() for v in value[1:-1].split(",")]
 
                     frontmatter[key] = value
 
@@ -171,19 +162,19 @@ def extract_title(content: str, file_path: Path) -> str:
         Title string
     """
     # Try to find markdown header
-    lines = content.split('\n')
+    lines = content.split("\n")
     for line in lines[:20]:  # Check first 20 lines
-        if line.startswith('# '):
+        if line.startswith("# "):
             return line[2:].strip()
 
     # Try to extract from frontmatter-like structure
-    if 'title:' in content[:500]:
-        match = re.search(r'title:\s*(.+)', content[:500])
+    if "title:" in content[:500]:
+        match = re.search(r"title:\s*(.+)", content[:500])
         if match:
             return match.group(1).strip()
 
     # Use filename
-    return file_path.stem.replace('_', ' ').title()
+    return file_path.stem.replace("_", " ").title()
 
 
 def extract_url(content: str, source_type: str) -> str:
@@ -199,11 +190,11 @@ def extract_url(content: str, source_type: str) -> str:
     """
     # Look for URL patterns based on source
     patterns = [
-        r'\*\*Video URL:\*\* (https?://[^\s\n]+)',
-        r'\*\*Link:\*\* (https?://[^\s\n]+)',
-        r'\*\*HN Discussion:\*\* (https?://[^\s\n]+)',
-        r'url:\s*(https?://[^\s\n]+)',
-        r'hn_url:\s*(https?://[^\s\n]+)',
+        r"\*\*Video URL:\*\* (https?://[^\s\n]+)",
+        r"\*\*Link:\*\* (https?://[^\s\n]+)",
+        r"\*\*HN Discussion:\*\* (https?://[^\s\n]+)",
+        r"url:\s*(https?://[^\s\n]+)",
+        r"hn_url:\s*(https?://[^\s\n]+)",
     ]
 
     for pattern in patterns:
@@ -211,7 +202,7 @@ def extract_url(content: str, source_type: str) -> str:
         if match:
             return match.group(1)
 
-    return ''
+    return ""
 
 
 def create_frontmatter(file_path: Path, content: str, args: argparse.Namespace) -> dict:
@@ -234,41 +225,41 @@ def create_frontmatter(file_path: Path, content: str, args: argparse.Namespace) 
 
     # Build frontmatter
     frontmatter = {
-        'type': existing_fm.get('type', source_type),
-        'created': datetime.now().strftime('%Y-%m-%d'),
-        'source': existing_fm.get('source', source_type),
+        "type": existing_fm.get("type", source_type),
+        "created": datetime.now().strftime("%Y-%m-%d"),
+        "source": existing_fm.get("source", source_type),
     }
 
     # Add title
-    title = existing_fm.get('title', extract_title(body, file_path))
-    frontmatter['title'] = title
+    title = existing_fm.get("title", extract_title(body, file_path))
+    frontmatter["title"] = title
 
     # Add URL if found
-    url = existing_fm.get('url', extract_url(content, source_type))
+    url = existing_fm.get("url", extract_url(content, source_type))
     if url:
-        frontmatter['url'] = url
+        frontmatter["url"] = url
 
     # Auto-tag
     if args.auto_tag:
         auto_tags = auto_tag_content(body)
-        existing_tags = existing_fm.get('tags', [])
+        existing_tags = existing_fm.get("tags", [])
 
         # Merge tags
         if isinstance(existing_tags, str):
-            existing_tags = [t.strip() for t in existing_tags.strip('[]').split(',')]
+            existing_tags = [t.strip() for t in existing_tags.strip("[]").split(",")]
 
         all_tags = list(set(auto_tags + existing_tags + (args.tags or [])))
-        frontmatter['tags'] = all_tags
+        frontmatter["tags"] = all_tags
     elif args.tags:
-        frontmatter['tags'] = args.tags
-    elif existing_fm.get('tags'):
-        frontmatter['tags'] = existing_fm['tags']
+        frontmatter["tags"] = args.tags
+    elif existing_fm.get("tags"):
+        frontmatter["tags"] = existing_fm["tags"]
 
     # Add custom fields
     if args.add_field:
         for field in args.add_field:
-            if ':' in field:
-                key, value = field.split(':', 1)
+            if ":" in field:
+                key, value = field.split(":", 1)
                 frontmatter[key.strip()] = value.strip()
 
     # Preserve other existing fields
@@ -289,20 +280,20 @@ def format_frontmatter(frontmatter: dict) -> str:
     Returns:
         YAML string
     """
-    lines = ['---']
+    lines = ["---"]
 
     for key, value in frontmatter.items():
         if isinstance(value, list):
             if value:
                 # Format as array
-                formatted_list = ', '.join(value)
-                lines.append(f'{key}: [{formatted_list}]')
+                formatted_list = ", ".join(value)
+                lines.append(f"{key}: [{formatted_list}]")
         else:
-            lines.append(f'{key}: {value}')
+            lines.append(f"{key}: {value}")
 
-    lines.append('---')
+    lines.append("---")
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def add_backlinks(content: str, backlinks: list) -> str:
@@ -341,7 +332,7 @@ def process_file(file_path: Path, output_path: Path, args: argparse.Namespace) -
     """
     try:
         # Read file
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Extract existing frontmatter and body
@@ -354,7 +345,7 @@ def process_file(file_path: Path, output_path: Path, args: argparse.Namespace) -
         fm_yaml = format_frontmatter(frontmatter)
 
         # Combine
-        new_content = fm_yaml + '\n\n' + body
+        new_content = fm_yaml + "\n\n" + body
 
         # Add backlinks if specified
         if args.backlink:
@@ -362,7 +353,7 @@ def process_file(file_path: Path, output_path: Path, args: argparse.Namespace) -
 
         # Write output
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(new_content)
 
         return True
@@ -375,7 +366,7 @@ def process_file(file_path: Path, output_path: Path, args: argparse.Namespace) -
 def main():
     """Main entry point for CLI usage."""
     parser = argparse.ArgumentParser(
-        description='Format content for Obsidian with YAML frontmatter and auto-tagging',
+        description="Format content for Obsidian with YAML frontmatter and auto-tagging",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -405,70 +396,52 @@ Auto-Tagging:
   - Productivity, automation, AI tools
   - Knowledge management, documentation
   - Leadership, hiring, career development
-        """
+        """,
+    )
+
+    parser.add_argument("input", nargs="*", help="Input file(s) or directory")
+
+    parser.add_argument("-i", "--input-dir", help="Input directory")
+
+    parser.add_argument("-o", "--output", help="Output file or directory")
+
+    parser.add_argument(
+        "--vault", help="Obsidian vault directory (shortcut for output)"
     )
 
     parser.add_argument(
-        'input',
-        nargs='*',
-        help='Input file(s) or directory'
+        "-r",
+        "--recursive",
+        action="store_true",
+        help="Process subdirectories recursively",
     )
 
     parser.add_argument(
-        '-i', '--input-dir',
-        help='Input directory'
+        "--auto-tag",
+        action="store_true",
+        help="Automatically add tags based on content",
+    )
+
+    parser.add_argument("--tags", nargs="+", help="Additional tags to add")
+
+    parser.add_argument(
+        "--backlink", action="append", help="Add backlink (can be used multiple times)"
     )
 
     parser.add_argument(
-        '-o', '--output',
-        help='Output file or directory'
+        "--add-field",
+        action="append",
+        help="Add custom frontmatter field (format: key:value)",
     )
 
     parser.add_argument(
-        '--vault',
-        help='Obsidian vault directory (shortcut for output)'
+        "--in-place",
+        action="store_true",
+        help="Modify files in place (no output directory)",
     )
 
     parser.add_argument(
-        '-r', '--recursive',
-        action='store_true',
-        help='Process subdirectories recursively'
-    )
-
-    parser.add_argument(
-        '--auto-tag',
-        action='store_true',
-        help='Automatically add tags based on content'
-    )
-
-    parser.add_argument(
-        '--tags',
-        nargs='+',
-        help='Additional tags to add'
-    )
-
-    parser.add_argument(
-        '--backlink',
-        action='append',
-        help='Add backlink (can be used multiple times)'
-    )
-
-    parser.add_argument(
-        '--add-field',
-        action='append',
-        help='Add custom frontmatter field (format: key:value)'
-    )
-
-    parser.add_argument(
-        '--in-place',
-        action='store_true',
-        help='Modify files in place (no output directory)'
-    )
-
-    parser.add_argument(
-        '-q', '--quiet',
-        action='store_true',
-        help='Quiet mode - minimal output'
+        "-q", "--quiet", action="store_true", help="Quiet mode - minimal output"
     )
 
     args = parser.parse_args()
@@ -485,20 +458,20 @@ Auto-Tagging:
             sys.exit(1)
 
         if args.recursive:
-            input_paths = list(input_dir.rglob('*.txt')) + list(input_dir.rglob('*.md'))
+            input_paths = list(input_dir.rglob("*.txt")) + list(input_dir.rglob("*.md"))
         else:
-            input_paths = list(input_dir.glob('*.txt')) + list(input_dir.glob('*.md'))
+            input_paths = list(input_dir.glob("*.txt")) + list(input_dir.glob("*.md"))
 
     elif args.input:
         for item in args.input:
             path = Path(item)
             if path.is_dir():
                 if args.recursive:
-                    input_paths.extend(path.rglob('*.txt'))
-                    input_paths.extend(path.rglob('*.md'))
+                    input_paths.extend(path.rglob("*.txt"))
+                    input_paths.extend(path.rglob("*.md"))
                 else:
-                    input_paths.extend(path.glob('*.txt'))
-                    input_paths.extend(path.glob('*.md'))
+                    input_paths.extend(path.glob("*.txt"))
+                    input_paths.extend(path.glob("*.md"))
             elif path.is_file():
                 input_paths.append(path)
 
@@ -518,7 +491,7 @@ Auto-Tagging:
     elif args.output:
         output_dir = Path(args.output)
     elif not args.in_place:
-        output_dir = Path('obsidian_output')
+        output_dir = Path("obsidian_output")
 
     # Process files
     if verbose:
@@ -560,5 +533,5 @@ Auto-Tagging:
         print(f"{'='*60}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

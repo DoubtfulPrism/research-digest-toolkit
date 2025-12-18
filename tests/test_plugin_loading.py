@@ -3,10 +3,10 @@
 Tests for plugin loading mechanism in research_digest.py.
 """
 
-import pytest
-import tempfile
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import pytest
 import yaml
 
 # Add parent directory to path for imports
@@ -22,28 +22,23 @@ def temp_config(tmp_path):
     Fixture that creates a temporary config file for testing.
     """
     config = {
-        'days_back': 7,
-        'output': {
-            'base_dir': str(tmp_path / 'research_digest'),
-            'use_date_folders': True
+        "days_back": 7,
+        "output": {
+            "base_dir": str(tmp_path / "research_digest"),
+            "use_date_folders": True,
         },
-        'scrapers': {
-            'hackernews': {'enabled': True},
-            'rss': {'enabled': False},
-            'reddit': {'enabled': True},
-            'arxiv': {'enabled': True}
+        "scrapers": {
+            "hackernews": {"enabled": True},
+            "rss": {"enabled": False},
+            "reddit": {"enabled": True},
+            "arxiv": {"enabled": True},
         },
-        'processing': {
-            'format_for_obsidian': False,
-            'auto_tag': False
-        },
-        'report': {
-            'generate_summary': False
-        }
+        "processing": {"format_for_obsidian": False, "auto_tag": False},
+        "report": {"generate_summary": False},
     }
 
-    config_path = tmp_path / 'test_config.yaml'
-    with open(config_path, 'w', encoding='utf-8') as f:
+    config_path = tmp_path / "test_config.yaml"
+    with open(config_path, "w", encoding="utf-8") as f:
         yaml.dump(config, f)
 
     return config_path
@@ -65,9 +60,9 @@ class TestResearchDigestInit:
         """Test that config is loaded correctly."""
         digest = ResearchDigest(str(temp_config), verbose=False)
 
-        assert 'scrapers' in digest.config
-        assert 'output' in digest.config
-        assert digest.config['days_back'] == 7
+        assert "scrapers" in digest.config
+        assert "output" in digest.config
+        assert digest.config["days_back"] == 7
 
     def test_initialization_with_verbose(self, temp_config):
         """Test that verbose flag is respected."""
@@ -79,15 +74,15 @@ class TestResearchDigestInit:
 
     def test_initialization_with_missing_config(self, tmp_path):
         """Test that initialization fails with missing config file."""
-        missing_config = tmp_path / 'missing.yaml'
+        missing_config = tmp_path / "missing.yaml"
 
         with pytest.raises(SystemExit):
             ResearchDigest(str(missing_config), verbose=False)
 
     def test_initialization_with_invalid_yaml(self, tmp_path):
         """Test that initialization fails with invalid YAML."""
-        invalid_config = tmp_path / 'invalid.yaml'
-        invalid_config.write_text('{ invalid yaml content: [', encoding='utf-8')
+        invalid_config = tmp_path / "invalid.yaml"
+        invalid_config.write_text("{ invalid yaml content: [", encoding="utf-8")
 
         with pytest.raises(SystemExit):
             ResearchDigest(str(invalid_config), verbose=False)
@@ -109,7 +104,7 @@ class TestPluginDiscovery:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         for scraper in digest.scrapers:
-            assert hasattr(scraper, 'name')
+            assert hasattr(scraper, "name")
             assert scraper.name != "Base"
             assert isinstance(scraper.name, str)
 
@@ -168,46 +163,40 @@ class TestGetOutputDir:
         output_dir = digest.get_output_dir()
 
         # Should include a date in the path (YYYY-MM-DD format)
-        assert any(part for part in output_dir.parts if '-' in part and len(part) == 10)
+        assert any(part for part in output_dir.parts if "-" in part and len(part) == 10)
 
     def test_respects_use_date_folders_false(self, tmp_path):
         """Test that use_date_folders: false prevents date subdirectories."""
         config = {
-            'output': {
-                'base_dir': str(tmp_path / 'output'),
-                'use_date_folders': False
-            },
-            'scrapers': {},
-            'processing': {},
-            'report': {}
+            "output": {"base_dir": str(tmp_path / "output"), "use_date_folders": False},
+            "scrapers": {},
+            "processing": {},
+            "report": {},
         }
 
-        config_path = tmp_path / 'config.yaml'
-        with open(config_path, 'w', encoding='utf-8') as f:
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f)
 
         digest = ResearchDigest(str(config_path), verbose=False)
         output_dir = digest.get_output_dir()
 
         # Should be exactly the base_dir without date subdirectory
-        assert output_dir == tmp_path / 'output'
+        assert output_dir == tmp_path / "output"
 
     def test_uses_custom_base_dir(self, tmp_path):
         """Test that custom base_dir is respected."""
-        custom_dir = tmp_path / 'custom_research'
+        custom_dir = tmp_path / "custom_research"
 
         config = {
-            'output': {
-                'base_dir': str(custom_dir),
-                'use_date_folders': False
-            },
-            'scrapers': {},
-            'processing': {},
-            'report': {}
+            "output": {"base_dir": str(custom_dir), "use_date_folders": False},
+            "scrapers": {},
+            "processing": {},
+            "report": {},
         }
 
-        config_path = tmp_path / 'config.yaml'
-        with open(config_path, 'w', encoding='utf-8') as f:
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f)
 
         digest = ResearchDigest(str(config_path), verbose=False)
@@ -223,7 +212,7 @@ class TestRunScrapers:
     def test_run_scrapers_creates_raw_directory(self, temp_config, tmp_path):
         """Test that run_scrapers creates a raw/ subdirectory."""
         digest = ResearchDigest(str(temp_config), verbose=False)
-        output_dir = tmp_path / 'test_output'
+        output_dir = tmp_path / "test_output"
         output_dir.mkdir()
 
         digest.run_scrapers(output_dir)
@@ -234,23 +223,23 @@ class TestRunScrapers:
     def test_only_enabled_scrapers_run(self, tmp_path):
         """Test that only enabled scrapers are executed."""
         config = {
-            'output': {'base_dir': str(tmp_path), 'use_date_folders': False},
-            'scrapers': {
-                'hackernews': {'enabled': False},
-                'rss': {'enabled': False},
-                'reddit': {'enabled': False},
-                'arxiv': {'enabled': False}
+            "output": {"base_dir": str(tmp_path), "use_date_folders": False},
+            "scrapers": {
+                "hackernews": {"enabled": False},
+                "rss": {"enabled": False},
+                "reddit": {"enabled": False},
+                "arxiv": {"enabled": False},
             },
-            'processing': {'format_for_obsidian': False},
-            'report': {'generate_summary': False}
+            "processing": {"format_for_obsidian": False},
+            "report": {"generate_summary": False},
         }
 
-        config_path = tmp_path / 'config.yaml'
-        with open(config_path, 'w', encoding='utf-8') as f:
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f)
 
         digest = ResearchDigest(str(config_path), verbose=False)
-        output_dir = tmp_path / 'output'
+        output_dir = tmp_path / "output"
         output_dir.mkdir()
 
         # Should complete without error even though no scrapers are enabled
@@ -272,16 +261,14 @@ class TestRunScrapers:
 
         # Create a config with our mock scraper enabled
         config = {
-            'output': {'base_dir': str(tmp_path / 'output'), 'use_date_folders': False},
-            'scrapers': {
-                'mocktest': {'enabled': True, 'test_value': 123}
-            },
-            'processing': {'format_for_obsidian': False},
-            'report': {'generate_summary': False}
+            "output": {"base_dir": str(tmp_path / "output"), "use_date_folders": False},
+            "scrapers": {"mocktest": {"enabled": True, "test_value": 123}},
+            "processing": {"format_for_obsidian": False},
+            "report": {"generate_summary": False},
         }
 
-        config_path = tmp_path / 'config.yaml'
-        with open(config_path, 'w', encoding='utf-8') as f:
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f)
 
         digest = ResearchDigest(str(config_path), verbose=False)
@@ -289,14 +276,14 @@ class TestRunScrapers:
         # Add our mock scraper to the list
         digest.scrapers.append(MockScraper(verbose=False))
 
-        output_dir = tmp_path / 'output'
+        output_dir = tmp_path / "output"
         output_dir.mkdir()
 
         digest.run_scrapers(output_dir)
 
         # Mock scraper should have received its config
         assert len(configs_received) == 1
-        assert configs_received[0]['test_value'] == 123
+        assert configs_received[0]["test_value"] == 123
 
     def test_scraper_errors_are_caught(self, temp_config, tmp_path, monkeypatch):
         """Test that errors from scrapers don't crash the entire pipeline."""
@@ -304,10 +291,10 @@ class TestRunScrapers:
         def broken_run(self, config, output_dir):
             raise Exception("Simulated scraper error")
 
-        monkeypatch.setattr(ScraperBase, 'run', broken_run)
+        monkeypatch.setattr(ScraperBase, "run", broken_run)
 
         digest = ResearchDigest(str(temp_config), verbose=False)
-        output_dir = tmp_path / 'output'
+        output_dir = tmp_path / "output"
         output_dir.mkdir()
 
         # Should not raise an exception
@@ -323,30 +310,24 @@ class TestLoadConfig:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         assert isinstance(digest.config, dict)
-        assert 'scrapers' in digest.config
+        assert "scrapers" in digest.config
 
     def test_handles_nested_config(self, tmp_path):
         """Test that nested configuration is preserved."""
-        config = {
-            'level1': {
-                'level2': {
-                    'level3': 'value'
-                }
-            }
-        }
+        config = {"level1": {"level2": {"level3": "value"}}}
 
-        config_path = tmp_path / 'nested.yaml'
-        with open(config_path, 'w', encoding='utf-8') as f:
+        config_path = tmp_path / "nested.yaml"
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f)
 
         digest = ResearchDigest(str(config_path), verbose=False)
 
-        assert digest.config['level1']['level2']['level3'] == 'value'
+        assert digest.config["level1"]["level2"]["level3"] == "value"
 
     def test_handles_empty_config(self, tmp_path):
         """Test that empty config file is handled."""
-        config_path = tmp_path / 'empty.yaml'
-        config_path.write_text('', encoding='utf-8')
+        config_path = tmp_path / "empty.yaml"
+        config_path.write_text("", encoding="utf-8")
 
         digest = ResearchDigest(str(config_path), verbose=False)
 
@@ -362,26 +343,19 @@ class TestCompleteWorkflow:
         """Test a minimal end-to-end workflow."""
         # Create minimal config
         config = {
-            'output': {
-                'base_dir': str(tmp_path / 'output'),
-                'use_date_folders': False
+            "output": {"base_dir": str(tmp_path / "output"), "use_date_folders": False},
+            "scrapers": {
+                "hackernews": {"enabled": False},
+                "rss": {"enabled": False},
+                "reddit": {"enabled": False},
+                "arxiv": {"enabled": False},
             },
-            'scrapers': {
-                'hackernews': {'enabled': False},
-                'rss': {'enabled': False},
-                'reddit': {'enabled': False},
-                'arxiv': {'enabled': False}
-            },
-            'processing': {
-                'format_for_obsidian': False
-            },
-            'report': {
-                'generate_summary': False
-            }
+            "processing": {"format_for_obsidian": False},
+            "report": {"generate_summary": False},
         }
 
-        config_path = tmp_path / 'config.yaml'
-        with open(config_path, 'w', encoding='utf-8') as f:
+        config_path = tmp_path / "config.yaml"
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(config, f)
 
         # Initialize and run
@@ -399,7 +373,7 @@ class TestCompleteWorkflow:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         scraper_names = [s.name.lower() for s in digest.scrapers]
-        config_keys = digest.config.get('scrapers', {}).keys()
+        config_keys = digest.config.get("scrapers", {}).keys()
 
         # At least some scraper names should match config keys
         matches = [name for name in scraper_names if name in config_keys]

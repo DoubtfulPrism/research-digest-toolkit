@@ -9,8 +9,8 @@ For better conversion quality, consider using native tools:
 """
 
 import argparse
-import sys
 import re
+import sys
 from pathlib import Path
 
 # Check for optional dependencies
@@ -20,18 +20,21 @@ PDF_AVAILABLE = False
 
 try:
     from docx import Document
+
     DOCX_AVAILABLE = True
 except ImportError:
     pass
 
 try:
     from markdownify import markdownify
+
     MARKDOWNIFY_AVAILABLE = True
 except ImportError:
     pass
 
 try:
     import PyPDF2
+
     PDF_AVAILABLE = True
 except ImportError:
     pass
@@ -48,7 +51,7 @@ def txt_to_md(text: str, title: str = None) -> str:
     Returns:
         Markdown formatted text
     """
-    lines = text.split('\n')
+    lines = text.split("\n")
     result = []
 
     if title:
@@ -61,12 +64,12 @@ def txt_to_md(text: str, title: str = None) -> str:
         if line.isupper() and len(line.split()) >= 3:
             result.append(f"## {line.title()}")
         # Lines ending with colon might be subheaders
-        elif line.endswith(':') and len(line) < 60:
+        elif line.endswith(":") and len(line) < 60:
             result.append(f"### {line}")
         else:
             result.append(line)
 
-    return '\n'.join(result)
+    return "\n".join(result)
 
 
 def html_to_md(html: str) -> str:
@@ -87,7 +90,7 @@ def html_to_md(html: str) -> str:
         print("Install with: pip install markdownify", file=sys.stderr)
         sys.exit(1)
 
-    return markdownify(html, heading_style='ATX', strip=['script', 'style'])
+    return markdownify(html, heading_style="ATX", strip=["script", "style"])
 
 
 def md_to_txt(markdown: str) -> str:
@@ -103,36 +106,36 @@ def md_to_txt(markdown: str) -> str:
     text = markdown
 
     # Remove headers
-    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
 
     # Remove bold
-    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
-    text = re.sub(r'__([^_]+)__', r'\1', text)
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"__([^_]+)__", r"\1", text)
 
     # Remove italic
-    text = re.sub(r'\*([^*]+)\*', r'\1', text)
-    text = re.sub(r'_([^_]+)_', r'\1', text)
+    text = re.sub(r"\*([^*]+)\*", r"\1", text)
+    text = re.sub(r"_([^_]+)_", r"\1", text)
 
     # Remove links but keep text
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
 
     # Remove images
-    text = re.sub(r'!\[([^\]]*)\]\([^\)]+\)', r'\1', text)
+    text = re.sub(r"!\[([^\]]*)\]\([^\)]+\)", r"\1", text)
 
     # Remove code blocks
-    text = re.sub(r'```[\s\S]*?```', '', text)
+    text = re.sub(r"```[\s\S]*?```", "", text)
 
     # Remove inline code
-    text = re.sub(r'`([^`]+)`', r'\1', text)
+    text = re.sub(r"`([^`]+)`", r"\1", text)
 
     # Remove blockquotes
-    text = re.sub(r'^>\s*', '', text, flags=re.MULTILINE)
+    text = re.sub(r"^>\s*", "", text, flags=re.MULTILINE)
 
     # Remove horizontal rules
-    text = re.sub(r'^[-*_]{3,}\s*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r"^[-*_]{3,}\s*$", "", text, flags=re.MULTILINE)
 
     # Clean up excessive newlines
-    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
 
@@ -161,19 +164,19 @@ def docx_to_md(path: str) -> str:
     for para in doc.paragraphs:
         text = para.text.strip()
         if not text:
-            lines.append('')
+            lines.append("")
             continue
 
-        style = para.style.name.lower() if para.style else ''
+        style = para.style.name.lower() if para.style else ""
 
         # Convert styles to markdown
-        if 'heading 1' in style or 'title' in style:
+        if "heading 1" in style or "title" in style:
             lines.append(f"# {text}")
-        elif 'heading 2' in style:
+        elif "heading 2" in style:
             lines.append(f"## {text}")
-        elif 'heading 3' in style:
+        elif "heading 3" in style:
             lines.append(f"### {text}")
-        elif 'heading' in style:
+        elif "heading" in style:
             lines.append(f"#### {text}")
         else:
             # Handle bold/italic formatting
@@ -188,9 +191,9 @@ def docx_to_md(path: str) -> str:
                     formatted_text.append(f"*{run_text}*")
                 else:
                     formatted_text.append(run_text)
-            lines.append(''.join(formatted_text))
+            lines.append("".join(formatted_text))
 
-    return '\n\n'.join(lines)
+    return "\n\n".join(lines)
 
 
 def docx_to_txt(path: str) -> str:
@@ -212,7 +215,7 @@ def docx_to_txt(path: str) -> str:
         sys.exit(1)
 
     doc = Document(path)
-    return '\n\n'.join(p.text for p in doc.paragraphs if p.text.strip())
+    return "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())
 
 
 def md_to_docx(markdown: str, output_path: str) -> None:
@@ -232,14 +235,14 @@ def md_to_docx(markdown: str, output_path: str) -> None:
         sys.exit(1)
 
     doc = Document()
-    lines = markdown.split('\n')
+    lines = markdown.split("\n")
     i = 0
 
     while i < len(lines):
         line = lines[i]
 
         # Handle headers
-        m = re.match(r'^(#{1,6})\s+(.+)$', line)
+        m = re.match(r"^(#{1,6})\s+(.+)$", line)
         if m:
             level = min(len(m.group(1)), 9)
             doc.add_heading(m.group(2), level=level)
@@ -247,23 +250,23 @@ def md_to_docx(markdown: str, output_path: str) -> None:
             continue
 
         # Handle code blocks
-        if line.startswith('```'):
+        if line.startswith("```"):
             code_lines = []
             i += 1
-            while i < len(lines) and not lines[i].startswith('```'):
+            while i < len(lines) and not lines[i].startswith("```"):
                 code_lines.append(lines[i])
                 i += 1
             if code_lines:
-                doc.add_paragraph('\n'.join(code_lines)).style = 'Quote'
+                doc.add_paragraph("\n".join(code_lines)).style = "Quote"
             i += 1
             continue
 
         # Handle regular paragraphs
         if line.strip():
             # Strip markdown formatting
-            line = re.sub(r'\*\*([^*]+)\*\*', r'\1', line)
-            line = re.sub(r'\*([^*]+)\*', r'\1', line)
-            line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line)
+            line = re.sub(r"\*\*([^*]+)\*\*", r"\1", line)
+            line = re.sub(r"\*([^*]+)\*", r"\1", line)
+            line = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", line)
             doc.add_paragraph(line)
 
         i += 1
@@ -297,13 +300,13 @@ def pdf_to_txt(path: str) -> str:
 
     text_parts = []
 
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         reader = PyPDF2.PdfReader(f)
         for page in reader.pages:
-            text = page.extract_text() or ''
+            text = page.extract_text() or ""
             text_parts.append(text)
 
-    return '\n\n'.join(text_parts).strip()
+    return "\n\n".join(text_parts).strip()
 
 
 def pdf_to_md(path: str) -> str:
@@ -332,15 +335,15 @@ def get_format(path: str) -> str:
     """
     ext = Path(path).suffix.lower()
     format_map = {
-        '.txt': 'txt',
-        '.md': 'md',
-        '.markdown': 'md',
-        '.html': 'html',
-        '.htm': 'html',
-        '.docx': 'docx',
-        '.pdf': 'pdf'
+        ".txt": "txt",
+        ".md": "md",
+        ".markdown": "md",
+        ".html": "html",
+        ".htm": "html",
+        ".docx": "docx",
+        ".pdf": "pdf",
     }
-    return format_map.get(ext, 'txt')
+    return format_map.get(ext, "txt")
 
 
 def convert_file(input_path: str, output_format: str) -> tuple:
@@ -362,29 +365,34 @@ def convert_file(input_path: str, output_format: str) -> tuple:
 
     # No conversion needed
     if input_format == output_format:
-        with open(input_path, 'r', encoding='utf-8') as f:
-            return f.read(), f'.{output_format}'
+        with open(input_path, "r", encoding="utf-8") as f:
+            return f.read(), f".{output_format}"
 
     # Define conversion functions
     conversions = {
-        ('txt', 'md'): lambda: (txt_to_md(
-            open(input_path, 'r', encoding='utf-8').read(),
-            Path(input_path).stem
-        ), '.md'),
-        ('md', 'txt'): lambda: (md_to_txt(
-            open(input_path, 'r', encoding='utf-8').read()
-        ), '.txt'),
-        ('html', 'md'): lambda: (html_to_md(
-            open(input_path, 'r', encoding='utf-8').read()
-        ), '.md'),
-        ('html', 'txt'): lambda: (md_to_txt(html_to_md(
-            open(input_path, 'r', encoding='utf-8').read()
-        )), '.txt'),
-        ('docx', 'md'): lambda: (docx_to_md(input_path), '.md'),
-        ('docx', 'txt'): lambda: (docx_to_txt(input_path), '.txt'),
-        ('md', 'docx'): lambda: (None, '.docx'),  # Special case - writes directly
-        ('pdf', 'txt'): lambda: (pdf_to_txt(input_path), '.txt'),
-        ('pdf', 'md'): lambda: (pdf_to_md(input_path), '.md'),
+        ("txt", "md"): lambda: (
+            txt_to_md(
+                open(input_path, "r", encoding="utf-8").read(), Path(input_path).stem
+            ),
+            ".md",
+        ),
+        ("md", "txt"): lambda: (
+            md_to_txt(open(input_path, "r", encoding="utf-8").read()),
+            ".txt",
+        ),
+        ("html", "md"): lambda: (
+            html_to_md(open(input_path, "r", encoding="utf-8").read()),
+            ".md",
+        ),
+        ("html", "txt"): lambda: (
+            md_to_txt(html_to_md(open(input_path, "r", encoding="utf-8").read())),
+            ".txt",
+        ),
+        ("docx", "md"): lambda: (docx_to_md(input_path), ".md"),
+        ("docx", "txt"): lambda: (docx_to_txt(input_path), ".txt"),
+        ("md", "docx"): lambda: (None, ".docx"),  # Special case - writes directly
+        ("pdf", "txt"): lambda: (pdf_to_txt(input_path), ".txt"),
+        ("pdf", "md"): lambda: (pdf_to_md(input_path), ".md"),
     }
 
     conversion_key = (input_format, output_format)
@@ -397,7 +405,7 @@ def convert_file(input_path: str, output_format: str) -> tuple:
 def main():
     """Main entry point for CLI usage."""
     parser = argparse.ArgumentParser(
-        description='Convert between document formats (txt, md, html, docx, pdf)',
+        description="Convert between document formats (txt, md, html, docx, pdf)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -416,31 +424,26 @@ Native Linux Alternatives (often better quality):
 
   # Install tools
   sudo dnf install pandoc poppler-utils
-        """
+        """,
     )
 
-    parser.add_argument(
-        'input_files',
-        nargs='+',
-        help='Input file(s) to convert'
-    )
+    parser.add_argument("input_files", nargs="+", help="Input file(s) to convert")
 
     parser.add_argument(
-        '--to',
+        "--to",
         required=True,
-        choices=['txt', 'md', 'html', 'docx'],
-        help='Target format'
+        choices=["txt", "md", "html", "docx"],
+        help="Target format",
     )
 
     parser.add_argument(
-        '-o', '--output',
-        help='Output file or directory (for batch mode)'
+        "-o", "--output", help="Output file or directory (for batch mode)"
     )
 
     parser.add_argument(
-        '--batch',
-        action='store_true',
-        help='Batch mode - convert multiple files to directory'
+        "--batch",
+        action="store_true",
+        help="Batch mode - convert multiple files to directory",
     )
 
     args = parser.parse_args()
@@ -448,7 +451,7 @@ Native Linux Alternatives (often better quality):
     try:
         # Batch mode or multiple files
         if args.batch or len(args.input_files) > 1:
-            output_dir = Path(args.output) if args.output else Path('converted')
+            output_dir = Path(args.output) if args.output else Path("converted")
             output_dir.mkdir(parents=True, exist_ok=True)
 
             success_count = 0
@@ -461,19 +464,22 @@ Native Linux Alternatives (often better quality):
                 input_path = Path(input_file)
 
                 if not input_path.exists():
-                    print(f"  ⚠ Warning: {input_file} not found, skipping", file=sys.stderr)
+                    print(
+                        f"  ⚠ Warning: {input_file} not found, skipping",
+                        file=sys.stderr,
+                    )
                     continue
 
                 try:
                     content, ext = convert_file(str(input_path), args.to)
                     output_file = output_dir / f"{input_path.stem}{ext}"
 
-                    if args.to == 'docx' and content is None:
+                    if args.to == "docx" and content is None:
                         # Special handling for markdown to docx
-                        with open(input_path, 'r', encoding='utf-8') as f:
+                        with open(input_path, "r", encoding="utf-8") as f:
                             md_to_docx(f.read(), str(output_file))
                     else:
-                        with open(output_file, 'w', encoding='utf-8') as f:
+                        with open(output_file, "w", encoding="utf-8") as f:
                             f.write(content)
 
                     print(f"  ✓ {input_file} -> {output_file}")
@@ -498,12 +504,12 @@ Native Linux Alternatives (often better quality):
             content, ext = convert_file(input_file, args.to)
             output_file = args.output if args.output else f"{input_path.stem}{ext}"
 
-            if args.to == 'docx' and content is None:
+            if args.to == "docx" and content is None:
                 # Special handling for markdown to docx
-                with open(input_file, 'r', encoding='utf-8') as f:
+                with open(input_file, "r", encoding="utf-8") as f:
                     md_to_docx(f.read(), output_file)
             else:
-                with open(output_file, 'w', encoding='utf-8') as f:
+                with open(output_file, "w", encoding="utf-8") as f:
                     f.write(content)
 
             print(f"✓ Converted: {input_file} -> {output_file}")
@@ -513,5 +519,5 @@ Native Linux Alternatives (often better quality):
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

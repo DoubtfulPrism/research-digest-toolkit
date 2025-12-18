@@ -4,12 +4,13 @@ Web Scraper - Extract clean text content from web pages
 Scrapes web pages and saves them as clean text files suitable for NotebookLM.
 """
 
+import argparse
+import os
+import re
+import sys
+
 import requests
 from bs4 import BeautifulSoup
-import re
-import os
-import argparse
-import sys
 
 
 def clean_html_content(html_content):
@@ -22,18 +23,30 @@ def clean_html_content(html_content):
     Returns:
         Cleaned text content
     """
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
 
     # Remove unwanted elements
-    for element in soup(["script", "style", "header", "footer", "nav",
-                         "aside", "form", "button", "iframe", "img"]):
+    for element in soup(
+        [
+            "script",
+            "style",
+            "header",
+            "footer",
+            "nav",
+            "aside",
+            "form",
+            "button",
+            "iframe",
+            "img",
+        ]
+    ):
         element.decompose()
 
     text = soup.get_text()
 
     # Clean up whitespace
-    text = re.sub(r'\n\s*\n', '\n\n', text)
-    text = re.sub(r' +', ' ', text)
+    text = re.sub(r"\n\s*\n", "\n\n", text)
+    text = re.sub(r" +", " ", text)
 
     return text.strip()
 
@@ -54,7 +67,7 @@ def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
 
     # Add user agent to avoid being blocked
     headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
     success_count = 0
@@ -68,16 +81,18 @@ def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
             clean_text = clean_html_content(response.content)
 
             # Extract page title for filename
-            title_soup = BeautifulSoup(response.content, 'html.parser')
-            page_title = title_soup.title.string if title_soup.title else f"article_{i+1}"
+            title_soup = BeautifulSoup(response.content, "html.parser")
+            page_title = (
+                title_soup.title.string if title_soup.title else f"article_{i+1}"
+            )
 
             # Sanitize filename (cross-platform safe)
-            filename_base = re.sub(r'[\\/:*?"<>|]', '_', page_title).strip()
+            filename_base = re.sub(r'[\\/:*?"<>|]', "_", page_title).strip()
             filename = f"{filename_base[:50].strip() or f'article_{i+1}'}.txt"
 
             output_path = os.path.join(output_dir, filename)
 
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(clean_text)
 
             file_size = len(clean_text)
@@ -99,7 +114,7 @@ def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
 def main():
     """Main entry point for CLI usage."""
     parser = argparse.ArgumentParser(
-        description='Scrape web pages and save as clean text files',
+        description="Scrape web pages and save as clean text files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -107,24 +122,20 @@ Examples:
   %(prog)s https://example.com https://another-site.com
   %(prog)s -o output_folder https://example.com
   %(prog)s -f urls.txt
-        """
+        """,
+    )
+
+    parser.add_argument("urls", nargs="*", help="URLs to scrape (space-separated)")
+
+    parser.add_argument(
+        "-f", "--file", help="Read URLs from a text file (one URL per line)"
     )
 
     parser.add_argument(
-        'urls',
-        nargs='*',
-        help='URLs to scrape (space-separated)'
-    )
-
-    parser.add_argument(
-        '-f', '--file',
-        help='Read URLs from a text file (one URL per line)'
-    )
-
-    parser.add_argument(
-        '-o', '--output',
-        default='notebooklm_sources_web',
-        help='Output directory (default: notebooklm_sources_web)'
+        "-o",
+        "--output",
+        default="notebooklm_sources_web",
+        help="Output directory (default: notebooklm_sources_web)",
     )
 
     args = parser.parse_args()
@@ -134,8 +145,12 @@ Examples:
 
     if args.file:
         try:
-            with open(args.file, 'r', encoding='utf-8') as f:
-                file_urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            with open(args.file, "r", encoding="utf-8") as f:
+                file_urls = [
+                    line.strip()
+                    for line in f
+                    if line.strip() and not line.startswith("#")
+                ]
                 urls.extend(file_urls)
         except IOError as e:
             print(f"Error reading file '{args.file}': {e}", file=sys.stderr)
@@ -143,7 +158,10 @@ Examples:
 
     if not urls:
         parser.print_help()
-        print("\nError: No URLs provided. Use URLs as arguments or specify a file with -f", file=sys.stderr)
+        print(
+            "\nError: No URLs provided. Use URLs as arguments or specify a file with -f",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     scrape_and_save(urls, args.output)

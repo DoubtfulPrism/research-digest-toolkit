@@ -5,15 +5,13 @@ Uses Nitter (privacy-focused Twitter front-end) to avoid API costs.
 """
 
 import argparse
-import sys
 import re
+import sys
 import time
 from pathlib import Path
-from datetime import datetime
-from urllib.parse import urlparse, quote
+
 import requests
 from bs4 import BeautifulSoup
-
 
 # Nitter instances (fallback list - some may be down)
 NITTER_INSTANCES = [
@@ -42,8 +40,8 @@ def extract_tweet_id(url: str) -> tuple:
     """
     # Handle various Twitter URL formats
     patterns = [
-        r'(?:twitter\.com|x\.com)/([^/]+)/status/(\d+)',
-        r'(?:twitter\.com|x\.com)/i/web/status/(\d+)',
+        r"(?:twitter\.com|x\.com)/([^/]+)/status/(\d+)",
+        r"(?:twitter\.com|x\.com)/i/web/status/(\d+)",
     ]
 
     for pattern in patterns:
@@ -57,7 +55,9 @@ def extract_tweet_id(url: str) -> tuple:
     raise ValueError(f"Could not parse Twitter URL: {url}")
 
 
-def try_nitter_instance(instance: str, username: str, tweet_id: str, timeout: int = 10) -> tuple:
+def try_nitter_instance(
+    instance: str, username: str, tweet_id: str, timeout: int = 10
+) -> tuple:
     """
     Try to fetch thread from a Nitter instance.
 
@@ -77,7 +77,7 @@ def try_nitter_instance(instance: str, username: str, tweet_id: str, timeout: in
             url = f"https://{instance}/i/web/status/{tweet_id}"
 
         headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
 
         response = requests.get(url, headers=headers, timeout=timeout)
@@ -109,7 +109,7 @@ def fetch_thread(twitter_url: str, verbose: bool = True) -> str:
 
     if verbose:
         print(f"Fetching thread: {tweet_id}")
-        print(f"Trying Nitter instances...")
+        print("Trying Nitter instances...")
 
     for instance in NITTER_INSTANCES:
         if verbose:
@@ -142,54 +142,49 @@ def parse_thread(html_content: str) -> dict:
     Returns:
         Dictionary with thread metadata and tweets
     """
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
 
     # Extract thread info
-    thread_data = {
-        'author': None,
-        'author_handle': None,
-        'date': None,
-        'tweets': []
-    }
+    thread_data = {"author": None, "author_handle": None, "date": None, "tweets": []}
 
     # Get author info from main tweet
-    main_tweet = soup.find('div', class_='main-tweet')
+    main_tweet = soup.find("div", class_="main-tweet")
     if main_tweet:
-        username_elem = main_tweet.find('a', class_='username')
+        username_elem = main_tweet.find("a", class_="username")
         if username_elem:
-            thread_data['author_handle'] = username_elem.text.strip()
+            thread_data["author_handle"] = username_elem.text.strip()
 
-        fullname_elem = main_tweet.find('a', class_='fullname')
+        fullname_elem = main_tweet.find("a", class_="fullname")
         if fullname_elem:
-            thread_data['author'] = fullname_elem.text.strip()
+            thread_data["author"] = fullname_elem.text.strip()
 
-        date_elem = main_tweet.find('span', class_='tweet-date')
+        date_elem = main_tweet.find("span", class_="tweet-date")
         if date_elem:
-            date_link = date_elem.find('a')
-            if date_link and date_link.get('title'):
-                thread_data['date'] = date_link['title']
+            date_link = date_elem.find("a")
+            if date_link and date_link.get("title"):
+                thread_data["date"] = date_link["title"]
 
     # Get all tweets in thread
-    timeline = soup.find('div', class_='timeline')
+    timeline = soup.find("div", class_="timeline")
     if timeline:
-        tweets = timeline.find_all('div', class_='timeline-item')
+        tweets = timeline.find_all("div", class_="timeline-item")
 
         for tweet in tweets:
-            tweet_content = tweet.find('div', class_='tweet-content')
+            tweet_content = tweet.find("div", class_="tweet-content")
             if tweet_content:
                 # Extract text
-                text = tweet_content.get_text(separator=' ', strip=True)
+                text = tweet_content.get_text(separator=" ", strip=True)
 
                 # Clean up text
-                text = re.sub(r'\s+', ' ', text).strip()
+                text = re.sub(r"\s+", " ", text).strip()
 
                 if text:
-                    thread_data['tweets'].append(text)
+                    thread_data["tweets"].append(text)
 
     return thread_data
 
 
-def format_thread(thread_data: dict, format_type: str = 'markdown') -> str:
+def format_thread(thread_data: dict, format_type: str = "markdown") -> str:
     """
     Format thread data for output.
 
@@ -200,7 +195,7 @@ def format_thread(thread_data: dict, format_type: str = 'markdown') -> str:
     Returns:
         Formatted thread content
     """
-    if format_type == 'obsidian':
+    if format_type == "obsidian":
         output = f"""---
 type: twitter-thread
 author: {thread_data['author'] or 'Unknown'}
@@ -217,7 +212,7 @@ tags: [twitter, thread]
 ---
 
 """
-    elif format_type == 'markdown':
+    elif format_type == "markdown":
         output = f"""# Twitter Thread
 
 **Author:** {thread_data['author']} ({thread_data['author_handle']})
@@ -236,8 +231,8 @@ Date: {thread_data['date']}
 """
 
     # Add tweets
-    for i, tweet in enumerate(thread_data['tweets'], 1):
-        if format_type in ['markdown', 'obsidian']:
+    for i, tweet in enumerate(thread_data["tweets"], 1):
+        if format_type in ["markdown", "obsidian"]:
             output += f"{i}. {tweet}\n\n"
         else:
             output += f"[{i}] {tweet}\n\n"
@@ -259,29 +254,30 @@ def generate_filename(thread_data: dict, tweet_id: str) -> str:
     Returns:
         Sanitized filename
     """
-    author = thread_data['author_handle'] or 'unknown'
-    author = author.replace('@', '').replace('/', '_')
+    author = thread_data["author_handle"] or "unknown"
+    author = author.replace("@", "").replace("/", "_")
 
     # Try to extract date
-    date_str = 'unknown'
-    if thread_data['date']:
+    date_str = "unknown"
+    if thread_data["date"]:
         try:
             # Try to parse date
-            date_str = thread_data['date'][:10].replace('/', '-')
-        except:
+            date_str = thread_data["date"][:10].replace("/", "-")
+        except (IndexError, AttributeError, TypeError):
             pass
 
     # Create filename
     filename = f"thread_{author}_{date_str}_{tweet_id}"
 
     # Sanitize
-    filename = re.sub(r'[^\w\-_.]', '_', filename)
+    filename = re.sub(r"[^\w\-_.]", "_", filename)
 
     return filename
 
 
-def process_thread(url: str, output_dir: str, format_type: str = 'markdown',
-                  verbose: bool = True) -> str:
+def process_thread(
+    url: str, output_dir: str, format_type: str = "markdown", verbose: bool = True
+) -> str:
     """
     Process a single thread URL.
 
@@ -305,8 +301,10 @@ def process_thread(url: str, output_dir: str, format_type: str = 'markdown',
         print("Parsing thread...")
     thread_data = parse_thread(html_content)
 
-    if not thread_data['tweets']:
-        raise Exception("No tweets found in thread. URL may not be a thread or Nitter parsing failed.")
+    if not thread_data["tweets"]:
+        raise Exception(
+            "No tweets found in thread. URL may not be a thread or Nitter parsing failed."
+        )
 
     # Format output
     formatted = format_thread(thread_data, format_type)
@@ -316,16 +314,16 @@ def process_thread(url: str, output_dir: str, format_type: str = 'markdown',
     filename = generate_filename(thread_data, tweet_id)
 
     # Determine extension
-    ext = '.md' if format_type in ['markdown', 'obsidian'] else '.txt'
+    ext = ".md" if format_type in ["markdown", "obsidian"] else ".txt"
     output_path = Path(output_dir) / f"{filename}{ext}"
 
     # Save file
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(formatted)
 
     if verbose:
-        tweet_count = len(thread_data['tweets'])
+        tweet_count = len(thread_data["tweets"])
         print(f"  ✓ Saved {tweet_count} tweets to: {output_path}")
 
     return str(output_path)
@@ -334,7 +332,7 @@ def process_thread(url: str, output_dir: str, format_type: str = 'markdown',
 def main():
     """Main entry point for CLI usage."""
     parser = argparse.ArgumentParser(
-        description='Download and format Twitter/X threads (uses Nitter, no API needed)',
+        description="Download and format Twitter/X threads (uses Nitter, no API needed)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -354,49 +352,42 @@ Alternative if Nitter is down:
   2. Paste the thread URL
   3. Copy the unrolled text
   4. Save manually
-        """
+        """,
+    )
+
+    parser.add_argument("url", nargs="?", help="Twitter/X thread URL")
+
+    parser.add_argument("-f", "--file", help="File with thread URLs (one per line)")
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output file (for single thread) or directory (for batch)",
     )
 
     parser.add_argument(
-        'url',
-        nargs='?',
-        help='Twitter/X thread URL'
-    )
-
-    parser.add_argument(
-        '-f', '--file',
-        help='File with thread URLs (one per line)'
-    )
-
-    parser.add_argument(
-        '-o', '--output',
-        help='Output file (for single thread) or directory (for batch)'
-    )
-
-    parser.add_argument(
-        '-d', '--output-dir',
+        "-d",
+        "--output-dir",
         default=DEFAULT_OUTPUT_DIR,
-        help=f'Output directory (default: {DEFAULT_OUTPUT_DIR})'
+        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR})",
     )
 
     parser.add_argument(
-        '--format',
-        choices=['markdown', 'text', 'obsidian'],
-        default='markdown',
-        help='Output format (default: markdown)'
+        "--format",
+        choices=["markdown", "text", "obsidian"],
+        default="markdown",
+        help="Output format (default: markdown)",
     )
 
     parser.add_argument(
-        '--delay',
+        "--delay",
         type=int,
         default=2,
-        help='Delay between requests in batch mode (seconds, default: 2)'
+        help="Delay between requests in batch mode (seconds, default: 2)",
     )
 
     parser.add_argument(
-        '-q', '--quiet',
-        action='store_true',
-        help='Quiet mode - minimal output'
+        "-q", "--quiet", action="store_true", help="Quiet mode - minimal output"
     )
 
     args = parser.parse_args()
@@ -406,9 +397,12 @@ Alternative if Nitter is down:
 
     if args.file:
         try:
-            with open(args.file, 'r', encoding='utf-8') as f:
-                urls = [line.strip() for line in f
-                       if line.strip() and not line.startswith('#')]
+            with open(args.file, "r", encoding="utf-8") as f:
+                urls = [
+                    line.strip()
+                    for line in f
+                    if line.strip() and not line.startswith("#")
+                ]
         except IOError as e:
             print(f"Error reading file '{args.file}': {e}", file=sys.stderr)
             sys.exit(1)
@@ -416,7 +410,10 @@ Alternative if Nitter is down:
         urls = [args.url]
     else:
         parser.print_help()
-        print("\nError: No URL provided. Use a URL or specify a file with -f", file=sys.stderr)
+        print(
+            "\nError: No URL provided. Use a URL or specify a file with -f",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Determine output directory
@@ -444,7 +441,7 @@ Alternative if Nitter is down:
                 thread_data = parse_thread(html_content)
                 formatted = format_thread(thread_data, args.format)
 
-                with open(args.output, 'w', encoding='utf-8') as f:
+                with open(args.output, "w", encoding="utf-8") as f:
                     f.write(formatted)
 
                 if verbose:
@@ -470,5 +467,5 @@ Alternative if Nitter is down:
         print(f"{'='*60}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -4,11 +4,10 @@ File Splitter - Split large text files into smaller chunks
 Designed for preparing large documents for NotebookLM (400k char limit).
 """
 
+import argparse
 import os
 import sys
-import argparse
 from pathlib import Path
-
 
 # Default settings
 DEFAULT_MAX_CHARS = 400000  # NotebookLM limit
@@ -17,9 +16,27 @@ DEFAULT_OUTPUT_DIR = "notebooklm_sources_split"
 
 # Supported text-based file extensions
 SUPPORTED_EXTENSIONS = {
-    '.txt', '.md', '.csv', '.log', '.json', '.xml', '.html',
-    '.py', '.js', '.java', '.c', '.cpp', '.h', '.sh', '.yaml',
-    '.yml', '.toml', '.ini', '.conf', '.rst', '.tex'
+    ".txt",
+    ".md",
+    ".csv",
+    ".log",
+    ".json",
+    ".xml",
+    ".html",
+    ".py",
+    ".js",
+    ".java",
+    ".c",
+    ".cpp",
+    ".h",
+    ".sh",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".ini",
+    ".conf",
+    ".rst",
+    ".tex",
 }
 
 
@@ -40,8 +57,12 @@ def is_text_file(filepath: str, check_extensions: bool = True) -> bool:
     return True
 
 
-def split_file_by_words(input_path: str, output_dir: str, max_chars: int = DEFAULT_MAX_CHARS,
-                        verbose: bool = True) -> int:
+def split_file_by_words(
+    input_path: str,
+    output_dir: str,
+    max_chars: int = DEFAULT_MAX_CHARS,
+    verbose: bool = True,
+) -> int:
     """
     Split a file into chunks by word boundaries.
 
@@ -59,7 +80,7 @@ def split_file_by_words(input_path: str, output_dir: str, max_chars: int = DEFAU
 
     try:
         # Read file
-        with open(input_path, 'r', encoding='utf-8') as f:
+        with open(input_path, "r", encoding="utf-8") as f:
             content = f.read()
 
         if not content.strip():
@@ -80,11 +101,11 @@ def split_file_by_words(input_path: str, output_dir: str, max_chars: int = DEFAU
             # Check if adding this word would exceed limit
             if current_chunk and (current_char_count + word_len + 1 > max_chars):
                 # Write current chunk
-                chunk_content = ' '.join(current_chunk)
+                chunk_content = " ".join(current_chunk)
                 output_filename = f"{base_name}_part{file_count:03d}{ext}"
                 output_path = os.path.join(output_dir, output_filename)
 
-                with open(output_path, 'w', encoding='utf-8') as out_f:
+                with open(output_path, "w", encoding="utf-8") as out_f:
                     out_f.write(chunk_content)
 
                 chunks_created += 1
@@ -97,11 +118,11 @@ def split_file_by_words(input_path: str, output_dir: str, max_chars: int = DEFAU
 
         # Write remaining chunk
         if current_chunk:
-            chunk_content = ' '.join(current_chunk)
+            chunk_content = " ".join(current_chunk)
             output_filename = f"{base_name}_part{file_count:03d}{ext}"
             output_path = os.path.join(output_dir, output_filename)
 
-            with open(output_path, 'w', encoding='utf-8') as out_f:
+            with open(output_path, "w", encoding="utf-8") as out_f:
                 out_f.write(chunk_content)
 
             chunks_created += 1
@@ -112,12 +133,17 @@ def split_file_by_words(input_path: str, output_dir: str, max_chars: int = DEFAU
                 print(f"  → {filename}: No split needed ({len(content):,} chars)")
         else:
             if verbose:
-                print(f"  ✓ {filename}: Split into {chunks_created} parts ({len(content):,} chars)")
+                print(
+                    f"  ✓ {filename}: Split into {chunks_created} parts ({len(content):,} chars)"
+                )
 
         return chunks_created
 
     except UnicodeDecodeError:
-        print(f"  ✗ Error: {filename} is not a valid text file (encoding issue)", file=sys.stderr)
+        print(
+            f"  ✗ Error: {filename} is not a valid text file (encoding issue)",
+            file=sys.stderr,
+        )
         return 0
     except IOError as e:
         print(f"  ✗ Error reading {filename}: {e}", file=sys.stderr)
@@ -127,8 +153,12 @@ def split_file_by_words(input_path: str, output_dir: str, max_chars: int = DEFAU
         return 0
 
 
-def split_file_by_lines(input_path: str, output_dir: str, max_chars: int = DEFAULT_MAX_CHARS,
-                       verbose: bool = True) -> int:
+def split_file_by_lines(
+    input_path: str,
+    output_dir: str,
+    max_chars: int = DEFAULT_MAX_CHARS,
+    verbose: bool = True,
+) -> int:
     """
     Split a file into chunks by line boundaries (preserves line structure).
 
@@ -146,7 +176,7 @@ def split_file_by_lines(input_path: str, output_dir: str, max_chars: int = DEFAU
 
     try:
         # Read file
-        with open(input_path, 'r', encoding='utf-8') as f:
+        with open(input_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         if not lines:
@@ -166,11 +196,11 @@ def split_file_by_lines(input_path: str, output_dir: str, max_chars: int = DEFAU
             # Check if adding this line would exceed limit
             if current_chunk and (current_char_count + line_len > max_chars):
                 # Write current chunk
-                chunk_content = ''.join(current_chunk)
+                chunk_content = "".join(current_chunk)
                 output_filename = f"{base_name}_part{file_count:03d}{ext}"
                 output_path = os.path.join(output_dir, output_filename)
 
-                with open(output_path, 'w', encoding='utf-8') as out_f:
+                with open(output_path, "w", encoding="utf-8") as out_f:
                     out_f.write(chunk_content)
 
                 chunks_created += 1
@@ -183,11 +213,11 @@ def split_file_by_lines(input_path: str, output_dir: str, max_chars: int = DEFAU
 
         # Write remaining chunk
         if current_chunk:
-            chunk_content = ''.join(current_chunk)
+            chunk_content = "".join(current_chunk)
             output_filename = f"{base_name}_part{file_count:03d}{ext}"
             output_path = os.path.join(output_dir, output_filename)
 
-            with open(output_path, 'w', encoding='utf-8') as out_f:
+            with open(output_path, "w", encoding="utf-8") as out_f:
                 out_f.write(chunk_content)
 
             chunks_created += 1
@@ -198,12 +228,17 @@ def split_file_by_lines(input_path: str, output_dir: str, max_chars: int = DEFAU
                 print(f"  → {filename}: No split needed ({total_chars:,} chars)")
         else:
             if verbose:
-                print(f"  ✓ {filename}: Split into {chunks_created} parts ({total_chars:,} chars)")
+                print(
+                    f"  ✓ {filename}: Split into {chunks_created} parts ({total_chars:,} chars)"
+                )
 
         return chunks_created
 
     except UnicodeDecodeError:
-        print(f"  ✗ Error: {filename} is not a valid text file (encoding issue)", file=sys.stderr)
+        print(
+            f"  ✗ Error: {filename} is not a valid text file (encoding issue)",
+            file=sys.stderr,
+        )
         return 0
     except IOError as e:
         print(f"  ✗ Error reading {filename}: {e}", file=sys.stderr)
@@ -213,9 +248,14 @@ def split_file_by_lines(input_path: str, output_dir: str, max_chars: int = DEFAU
         return 0
 
 
-def process_files(input_paths: list, output_dir: str, max_chars: int = DEFAULT_MAX_CHARS,
-                 split_by: str = 'words', check_extensions: bool = True,
-                 verbose: bool = True) -> dict:
+def process_files(
+    input_paths: list,
+    output_dir: str,
+    max_chars: int = DEFAULT_MAX_CHARS,
+    split_by: str = "words",
+    check_extensions: bool = True,
+    verbose: bool = True,
+) -> dict:
     """
     Process multiple files and split them.
 
@@ -236,47 +276,55 @@ def process_files(input_paths: list, output_dir: str, max_chars: int = DEFAULT_M
         if verbose:
             print(f"Created output directory: {output_dir}\n")
 
-    split_func = split_file_by_lines if split_by == 'lines' else split_file_by_words
+    split_func = split_file_by_lines if split_by == "lines" else split_file_by_words
 
     stats = {
-        'total_files': 0,
-        'processed': 0,
-        'skipped': 0,
-        'failed': 0,
-        'chunks_created': 0
+        "total_files": 0,
+        "processed": 0,
+        "skipped": 0,
+        "failed": 0,
+        "chunks_created": 0,
     }
 
     for input_path in input_paths:
-        stats['total_files'] += 1
+        stats["total_files"] += 1
 
         # Check if file should be processed
         if not os.path.isfile(input_path):
             if verbose:
                 print(f"  ⚠ Skipping non-file: {input_path}")
-            stats['skipped'] += 1
+            stats["skipped"] += 1
             continue
 
         if check_extensions and not is_text_file(input_path):
             if verbose:
-                print(f"  ⚠ Skipping unsupported file type: {os.path.basename(input_path)}")
-            stats['skipped'] += 1
+                print(
+                    f"  ⚠ Skipping unsupported file type: {os.path.basename(input_path)}"
+                )
+            stats["skipped"] += 1
             continue
 
         # Process file
         chunks = split_func(input_path, output_dir, max_chars, verbose)
 
         if chunks > 0:
-            stats['processed'] += 1
-            stats['chunks_created'] += chunks
+            stats["processed"] += 1
+            stats["chunks_created"] += chunks
         else:
-            stats['failed'] += 1
+            stats["failed"] += 1
 
     return stats
 
 
-def process_directory(input_dir: str, output_dir: str, max_chars: int = DEFAULT_MAX_CHARS,
-                     split_by: str = 'words', recursive: bool = False,
-                     check_extensions: bool = True, verbose: bool = True) -> dict:
+def process_directory(
+    input_dir: str,
+    output_dir: str,
+    max_chars: int = DEFAULT_MAX_CHARS,
+    split_by: str = "words",
+    recursive: bool = False,
+    check_extensions: bool = True,
+    verbose: bool = True,
+) -> dict:
     """
     Process all files in a directory.
 
@@ -311,7 +359,13 @@ def process_directory(input_dir: str, output_dir: str, max_chars: int = DEFAULT_
 
     if not input_paths:
         print(f"No files found in '{input_dir}'")
-        return {'total_files': 0, 'processed': 0, 'skipped': 0, 'failed': 0, 'chunks_created': 0}
+        return {
+            "total_files": 0,
+            "processed": 0,
+            "skipped": 0,
+            "failed": 0,
+            "chunks_created": 0,
+        }
 
     if verbose:
         print(f"Processing {len(input_paths)} file(s) from '{input_dir}'...")
@@ -319,13 +373,15 @@ def process_directory(input_dir: str, output_dir: str, max_chars: int = DEFAULT_
         print(f"Max chars per chunk: {max_chars:,}")
         print(f"Split mode: {split_by}\n")
 
-    return process_files(input_paths, output_dir, max_chars, split_by, check_extensions, verbose)
+    return process_files(
+        input_paths, output_dir, max_chars, split_by, check_extensions, verbose
+    )
 
 
 def main():
     """Main entry point for CLI usage."""
     parser = argparse.ArgumentParser(
-        description='Split large text files into smaller chunks for NotebookLM',
+        description="Split large text files into smaller chunks for NotebookLM",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -336,49 +392,47 @@ Examples:
   %(prog)s -i file.txt --lines     # Split by lines instead of words
   %(prog)s -i docs/ -r             # Process subdirectories recursively
   %(prog)s -i data/ --all          # Process all files (ignore extensions)
-        """
+        """,
     )
 
     parser.add_argument(
-        '-i', '--input',
-        help='Input file or directory (default: files_to_split/)'
+        "-i", "--input", help="Input file or directory (default: files_to_split/)"
     )
 
     parser.add_argument(
-        '-o', '--output',
+        "-o",
+        "--output",
         default=DEFAULT_OUTPUT_DIR,
-        help=f'Output directory (default: {DEFAULT_OUTPUT_DIR})'
+        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR})",
     )
 
     parser.add_argument(
-        '-m', '--max-chars',
+        "-m",
+        "--max-chars",
         type=int,
         default=DEFAULT_MAX_CHARS,
-        help=f'Maximum characters per chunk (default: {DEFAULT_MAX_CHARS:,})'
+        help=f"Maximum characters per chunk (default: {DEFAULT_MAX_CHARS:,})",
     )
 
     parser.add_argument(
-        '--lines',
-        action='store_true',
-        help='Split by lines instead of words (preserves line structure)'
+        "--lines",
+        action="store_true",
+        help="Split by lines instead of words (preserves line structure)",
     )
 
     parser.add_argument(
-        '-r', '--recursive',
-        action='store_true',
-        help='Process subdirectories recursively'
+        "-r",
+        "--recursive",
+        action="store_true",
+        help="Process subdirectories recursively",
     )
 
     parser.add_argument(
-        '--all',
-        action='store_true',
-        help='Process all files regardless of extension'
+        "--all", action="store_true", help="Process all files regardless of extension"
     )
 
     parser.add_argument(
-        '-q', '--quiet',
-        action='store_true',
-        help='Quiet mode - minimal output'
+        "-q", "--quiet", action="store_true", help="Quiet mode - minimal output"
     )
 
     args = parser.parse_args()
@@ -392,7 +446,7 @@ Examples:
         sys.exit(1)
 
     # Process files
-    split_by = 'lines' if args.lines else 'words'
+    split_by = "lines" if args.lines else "words"
     verbose = not args.quiet
 
     if os.path.isfile(input_path):
@@ -403,21 +457,29 @@ Examples:
             print(f"Max chars per chunk: {args.max_chars:,}")
             print(f"Split mode: {split_by}\n")
 
-        stats = process_files([input_path], args.output, args.max_chars,
-                            split_by, not args.all, verbose)
+        stats = process_files(
+            [input_path], args.output, args.max_chars, split_by, not args.all, verbose
+        )
     else:
         # Directory mode
-        stats = process_directory(input_path, args.output, args.max_chars,
-                                 split_by, args.recursive, not args.all, verbose)
+        stats = process_directory(
+            input_path,
+            args.output,
+            args.max_chars,
+            split_by,
+            args.recursive,
+            not args.all,
+            verbose,
+        )
 
     # Print summary
-    if verbose and stats['total_files'] > 0:
+    if verbose and stats["total_files"] > 0:
         print(f"\n{'='*60}")
-        print(f"Summary:")
+        print("Summary:")
         print(f"  Total files: {stats['total_files']}")
         print(f"  Processed: {stats['processed']}")
         print(f"  Skipped: {stats['skipped']}")
-        if stats['failed'] > 0:
+        if stats["failed"] > 0:
             print(f"  Failed: {stats['failed']}")
         print(f"  Chunks created: {stats['chunks_created']}")
         print(f"{'='*60}")

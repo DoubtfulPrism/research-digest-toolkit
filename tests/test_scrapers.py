@@ -3,9 +3,10 @@
 Tests for scrapers/base.py - Base scraper class and plugin architecture.
 """
 
-import pytest
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import pytest
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -44,14 +45,14 @@ class TestScraperBase:
         """Test that the name attribute is set."""
         scraper = ScraperBase()
 
-        assert hasattr(scraper, 'name')
+        assert hasattr(scraper, "name")
         assert isinstance(scraper.name, str)
 
     def test_verbose_attribute_exists(self):
         """Test that the verbose attribute is set."""
         scraper = ScraperBase()
 
-        assert hasattr(scraper, 'verbose')
+        assert hasattr(scraper, "verbose")
         assert isinstance(scraper.verbose, bool)
 
 
@@ -74,7 +75,7 @@ class TestScraperInheritance:
                 return "Success"
 
         scraper = TestScraper()
-        config = {'test': 'value'}
+        config = {"test": "value"}
         result = scraper.run(config, tmp_path)
 
         assert result == "Success"
@@ -132,11 +133,7 @@ class TestScraperContract:
                 return config
 
         scraper = TestScraper()
-        config = {
-            'enabled': True,
-            'days_back': 7,
-            'topics': ['test', 'example']
-        }
+        config = {"enabled": True, "days_back": 7, "topics": ["test", "example"]}
 
         result = scraper.run(config, tmp_path)
         assert result == config
@@ -169,12 +166,12 @@ class TestScraperContract:
 
             def run(self, config, output_dir):
                 # Create a subdirectory
-                scraper_dir = output_dir / 'test_scraper'
+                scraper_dir = output_dir / "test_scraper"
                 scraper_dir.mkdir(parents=True, exist_ok=True)
 
                 # Write a test file
-                test_file = scraper_dir / 'test.md'
-                test_file.write_text('Test content', encoding='utf-8')
+                test_file = scraper_dir / "test.md"
+                test_file.write_text("Test content", encoding="utf-8")
 
                 return scraper_dir
 
@@ -182,8 +179,8 @@ class TestScraperContract:
         result_dir = scraper.run({}, tmp_path)
 
         assert result_dir.exists()
-        assert (result_dir / 'test.md').exists()
-        assert (result_dir / 'test.md').read_text(encoding='utf-8') == 'Test content'
+        assert (result_dir / "test.md").exists()
+        assert (result_dir / "test.md").read_text(encoding="utf-8") == "Test content"
 
 
 @pytest.mark.unit
@@ -215,13 +212,13 @@ class TestScraperEdgeCases:
                 self.name = "TestScraper"
 
             def run(self, config, output_dir):
-                return config.get('missing_key', 'default')
+                return config.get("missing_key", "default")
 
         scraper = TestScraper()
-        config = {'key1': None, 'key2': 'value'}
+        config = {"key1": None, "key2": "value"}
         result = scraper.run(config, tmp_path)
 
-        assert result == 'default'
+        assert result == "default"
 
     def test_verbose_affects_behavior(self, tmp_path, capsys):
         """Test that verbose flag can affect scraper behavior."""
@@ -265,7 +262,7 @@ class TestRealScraperPatterns:
                 self.processed_items = set()
 
             def run(self, config, output_dir):
-                items = ['item1', 'item2', 'item3']
+                items = ["item1", "item2", "item3"]
                 new_items = []
 
                 for item in items:
@@ -301,8 +298,8 @@ class TestRealScraperPatterns:
 
                 # Save multiple files
                 for i in range(5):
-                    filepath = source_dir / f'item_{i}.md'
-                    filepath.write_text(f'# Item {i}\n\nContent {i}', encoding='utf-8')
+                    filepath = source_dir / f"item_{i}.md"
+                    filepath.write_text(f"# Item {i}\n\nContent {i}", encoding="utf-8")
 
                 return source_dir
 
@@ -311,14 +308,14 @@ class TestRealScraperPatterns:
 
         # Verify files were created
         assert result_dir.exists()
-        files = list(result_dir.glob('*.md'))
+        files = list(result_dir.glob("*.md"))
         assert len(files) == 5
 
         # Verify content
         for i in range(5):
-            filepath = result_dir / f'item_{i}.md'
-            content = filepath.read_text(encoding='utf-8')
-            assert f'Item {i}' in content
+            filepath = result_dir / f"item_{i}.md"
+            content = filepath.read_text(encoding="utf-8")
+            assert f"Item {i}" in content
 
     def test_scraper_with_config_based_behavior(self, tmp_path):
         """Test that scrapers use config to control behavior."""
@@ -329,14 +326,14 @@ class TestRealScraperPatterns:
                 self.name = "TestScraper"
 
             def run(self, config, output_dir):
-                enabled = config.get('enabled', True)
-                max_items = config.get('max_items', 10)
+                enabled = config.get("enabled", True)
+                max_items = config.get("max_items", 10)
 
                 if not enabled:
                     return []
 
                 # Generate items based on config
-                items = [f'item_{i}' for i in range(max_items)]
+                items = [f"item_{i}" for i in range(max_items)]
                 return items
 
         scraper = TestScraper()
@@ -346,9 +343,9 @@ class TestRealScraperPatterns:
         assert len(result1) == 10
 
         # Test with custom max_items
-        result2 = scraper.run({'max_items': 5}, tmp_path)
+        result2 = scraper.run({"max_items": 5}, tmp_path)
         assert len(result2) == 5
 
         # Test with enabled=False
-        result3 = scraper.run({'enabled': False}, tmp_path)
+        result3 = scraper.run({"enabled": False}, tmp_path)
         assert len(result3) == 0
