@@ -71,14 +71,14 @@ repos:
   - repo: local
     hooks:
       # Run tests before commit
-      # - id: pytest-check
-      #   name: pytest-check
-      #   entry: pytest
-      #   args: ['tests/', '-q', '--tb=no', '--maxfail=3']
-      #   language: system
-      #   pass_filenames: false
-      #   always_run: true
-      #   stages: [pre-commit]
+      - id: pytest-check
+        name: pytest-check
+        entry: pytest
+        args: ['tests/', '-q', '--tb=no', '--maxfail=3']
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
 
       # Check test coverage for modified files
       - id: pytest-cov

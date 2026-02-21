@@ -4,14 +4,17 @@
 Uses Nitter (privacy-focused Twitter front-end) to avoid API costs.
 """
 
-import argparse
 import re
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 import requests
+import typer
 from bs4 import BeautifulSoup
+
+app = typer.Typer(help="Download and format Twitter/X threads (uses Nitter, no API needed)")
 
 # Nitter instances (fallback list - some may be down)
 NITTER_INSTANCES = [
@@ -322,97 +325,112 @@ def process_thread(
     return str(output_path)
 
 
-def main():
-    """Main entry point for CLI usage."""
-    parser = argparse.ArgumentParser(
-        description="Download and format Twitter/X threads (uses Nitter, no API needed)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s https://twitter.com/user/status/123456789
-  %(prog)s https://x.com/user/status/123456789 --format obsidian
-  %(prog)s -f threads.txt --batch
-  %(prog)s https://twitter.com/user/status/123 -o custom_name.md
-
-Notes:
-  - Uses Nitter instances (no Twitter API required)
-  - If Nitter is down, use threadreaderapp.com as fallback
-  - For best results, use URLs of the first tweet in a thread
-  - Rate limiting: Add --delay between batch requests
-
-Alternative if Nitter is down:
-  1. Visit https://threadreaderapp.com
-  2. Paste the thread URL
-  3. Copy the unrolled text
-  4. Save manually
-        """,
-    )
-
-    parser.add_argument("url", nargs="?", help="Twitter/X thread URL")
-
-    parser.add_argument("-f", "--file", help="File with thread URLs (one per line)")
-
-    parser.add_argument(
-        "-o",
+@app.command()
+def main(
+    url: Optional[str] = typer.Argument(
+        None,
+        help="Twitter/X thread URL",
+    ),
+    file: Optional[str] = typer.Option(
+        None,
+        "--file",
+        "-f",
+        help="File with thread URLs (one per line)",
+    ),
+    output: Optional[str] = typer.Option(
+        None,
         "--output",
+        "-o",
         help="Output file (for single thread) or directory (for batch)",
-    )
-
-    parser.add_argument(
-        "-d",
+    ),
+    output_dir: str = typer.Option(
+        DEFAULT_OUTPUT_DIR,
         "--output-dir",
-        default=DEFAULT_OUTPUT_DIR,
-        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR})",
-    )
-
-    parser.add_argument(
+        "-d",
+        help="Output directory for batch mode",
+    ),
+    format: str = typer.Option(
+        "markdown",
         "--format",
-        choices=["markdown", "text", "obsidian"],
-        default="markdown",
-        help="Output format (default: markdown)",
-    )
-
-    parser.add_argument(
+        help="Output format (markdown, text, or obsidian)",
+    ),
+    delay: int = typer.Option(
+        2,
         "--delay",
-        type=int,
-        default=2,
-        help="Delay between requests in batch mode (seconds, default: 2)",
-    )
+        help="Delay between requests in batch mode (seconds)",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet",
+        "-q",
+        help="Quiet mode - minimal output",
+    ),
+):
+    """
+    Download and format Twitter/X threads using Nitter (no API needed).
 
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Quiet mode - minimal output"
-    )
+    Examples:
 
-    args = parser.parse_args()
+      thread_reader.py https://twitter.com/user/status/123456789
+
+      thread_reader.py https://x.com/user/status/123456789 --format obsidian
+
+      thread_reader.py -f threads.txt
+
+      thread_reader.py https://twitter.com/user/status/123 -o custom_name.md
+
+    Notes:
+
+      - Uses Nitter instances (no Twitter API required)
+
+      - If Nitter is down, use threadreaderapp.com as fallback
+
+      - For best results, use URLs of the first tweet in a thread
+
+      - Rate limiting: Add --delay between batch requests
+
+    Alternative if Nitter is down:
+
+      1. Visit https://threadreaderapp.com
+
+      2. Paste the thread URL
+
+      3. Copy the unrolled text
+
+      4. Save manually
+    """
+    # Validate format
+    if format not in ["markdown", "text", "obsidian"]:
+        print(f"Error: Invalid format '{format}'. Use markdown, text, or obsidian", file=sys.stderr)
+        raise typer.Exit(1)
 
     # Collect URLs
     urls = []
 
-    if args.file:
+    if file:
         try:
-            with open(args.file, "r", encoding="utf-8") as f:
+            with open(file, "r", encoding="utf-8") as f:
                 urls = [
                     line.strip()
                     for line in f
                     if line.strip() and not line.startswith("#")
                 ]
         except IOError as e:
-            print(f"Error reading file '{args.file}': {e}", file=sys.stderr)
-            sys.exit(1)
-    elif args.url:
-        urls = [args.url]
+            print(f"Error reading file '{file}': {e}", file=sys.stderr)
+            raise typer.Exit(1)
+    elif url:
+        urls = [url]
     else:
-        parser.print_help()
         print(
-            "\nError: No URL provided. Use a URL or specify a file with -f",
+            "Error: No URL provided. Use a URL or specify a file with -f",
             file=sys.stderr,
         )
-        sys.exit(1)
+        raise typer.Exit(1)
 
     # Determine output directory
-    output_dir = args.output if args.output and len(urls) > 1 else args.output_dir
+    out_dir = output if output and len(urls) > 1 else output_dir
 
-    verbose = not args.quiet
+    verbose = not quiet
 
     # Process threads
     success_count = 0
@@ -420,8 +438,8 @@ Alternative if Nitter is down:
 
     if verbose and total > 1:
         print(f"Processing {total} thread(s)...")
-        print(f"Output directory: {output_dir}")
-        print(f"Format: {args.format}\n")
+        print(f"Output directory: {out_dir}")
+        print(f"Format: {format}\n")
 
     for i, url in enumerate(urls, 1):
         try:
@@ -429,25 +447,25 @@ Alternative if Nitter is down:
                 print(f"\n[{i}/{total}] {url}")
 
             # Single thread with custom output
-            if total == 1 and args.output:
+            if total == 1 and output:
                 html_content = fetch_thread(url, verbose)
                 thread_data = parse_thread(html_content)
-                formatted = format_thread(thread_data, args.format)
+                formatted = format_thread(thread_data, format)
 
-                with open(args.output, "w", encoding="utf-8") as f:
+                with open(output, "w", encoding="utf-8") as f:
                     f.write(formatted)
 
                 if verbose:
-                    print(f"✓ Saved to: {args.output}")
+                    print(f"✓ Saved to: {output}")
             else:
                 # Batch mode
-                process_thread(url, output_dir, args.format, verbose)
+                process_thread(url, out_dir, format, verbose)
 
             success_count += 1
 
             # Rate limiting for batch
-            if i < total and args.delay > 0:
-                time.sleep(args.delay)
+            if i < total and delay > 0:
+                time.sleep(delay)
 
         except Exception as e:
             print(f"  ✗ Error processing {url}: {e}", file=sys.stderr)
@@ -461,4 +479,4 @@ Alternative if Nitter is down:
 
 
 if __name__ == "__main__":
-    main()
+    app()

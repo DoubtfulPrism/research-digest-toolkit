@@ -5,8 +5,12 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+
 import database
 import utils
+from config_models import ArxivConfig
+from rich_utils import print_error, print_info, print_section, print_warning
 
 from .base import ScraperBase
 
@@ -64,41 +68,47 @@ class ArxivScraper(ScraperBase):
         super().__init__(verbose)
         self.name = "Arxiv"
 
-    def run(self, config: dict, output_dir: Path):
+    def run(self, config: ArxivConfig, output_dir: Path):
         """Processes ArXiv search queries based on the provided configuration.
 
         Args:
-            config: The scraper-specific configuration dictionary.
+            config: The scraper-specific Pydantic configuration model.
             output_dir: The base directory Path object for raw output.
         """
         if not ARXIV_AVAILABLE:
-            if self.verbose:
-                print(
-                    "  - Skipping ArXiv scraper: 'arxiv' library not installed. Run 'pip install arxiv'."
-                )
+            print_warning(
+                "Skipping ArXiv scraper: 'arxiv' library not installed. Run 'pip install arxiv'.",
+                self.verbose,
+            )
             return
 
-        if self.verbose:
-            print("🔬 Scraping ArXiv...")
+        print_section("🔬 Scraping ArXiv", self.verbose)
 
-        queries = config.get("search_queries", [])
-        days_back = config.get("days_back", 30)
-        max_results_per_query = config.get("max_results", 25)
+        queries = config.search_queries
+        days_back = config.days_back
+        max_results_per_query = config.max_results
 
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_back)
 
         for query in queries:
-            if self.verbose:
-                print(f"  -> Searching for: '{query}'")
+            print_info(f"Searching for: '{query}'", self.verbose)
 
             try:
-                search = arxiv.Search(
-                    query=query,
-                    max_results=max_results_per_query,
-                    sort_by=arxiv.SortCriterion.SubmittedDate,
+                @retry(
+                    stop=stop_after_attempt(3),
+                    wait=wait_exponential(multiplier=1, min=1, max=10),
+                    retry=retry_if_exception(lambda e: isinstance(e, (arxiv.arxiv.UnexpectedEmptyPageError, arxiv.arxiv.HTTPError))),
+                    reraise=True,
                 )
+                def _search_arxiv():
+                    search = arxiv.Search(
+                        query=query,
+                        max_results=max_results_per_query,
+                        sort_by=arxiv.SortCriterion.SubmittedDate,
+                    )
+                    return list(search.results())
 
-                results = list(search.results())
+                results = _search_arxiv()
 
                 for paper in results:
                     # The API returns timezone-aware datetime objects
@@ -106,20 +116,18 @@ class ArxivScraper(ScraperBase):
 
                     if paper_date < cutoff_date:
                         # Since results are sorted by date, we can stop once we hit old papers
-                        if self.verbose:
-                            print("    - Reached end of time window for this query.")
+                        print_info("Reached end of time window for this query.", self.verbose)
                         break
 
                     unique_id = paper.entry_id
                     if database.item_exists("arxiv", unique_id):
-                        if self.verbose:
-                            print(
-                                f"    - Skipping (already processed): {paper.title[:70]}"
-                            )
+                        print_info(
+                            f"Skipping (already processed): {paper.title[:70]}",
+                            self.verbose,
+                        )
                         continue
 
-                    if self.verbose:
-                        print(f"    -> Processing paper: {paper.title[:70]}")
+                    print_info(f"Processing paper: {paper.title[:70]}", self.verbose)
 
                     content = _format_paper(paper)
                     filename = utils.generate_filename("arxiv", paper.title, unique_id)
@@ -129,9 +137,6 @@ class ArxivScraper(ScraperBase):
                     database.add_item("arxiv", unique_id)
 
             except Exception as e:
-                if self.verbose:
-                    print(
-                        f"    ✗ Error processing ArXiv query '{query}': {e}",
-                        file=sys.stderr,
-                    )
+                print_error(f"Error processing ArXiv query '{query}': {e}", self.verbose)
                 continue
+

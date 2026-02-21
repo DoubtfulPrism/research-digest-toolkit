@@ -6,8 +6,14 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+
 import database
 import utils
+from config_models import RSSConfig
+from http_client import get_sync_client
+from rich_utils import print_error, print_info, print_section, print_warning
 
 try:
     import feedparser
@@ -21,17 +27,26 @@ from .base import ScraperBase
 # --- Helper Functions (from the original rss_reader.py) ---
 
 
-def _fetch_feed(feed_url: str, timeout: int = 10) -> dict:
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    reraise=True,
+)
+def _fetch_feed(client: httpx.Client, feed_url: str, timeout: int = 10) -> dict:
     """Fetches and parses an RSS/Atom feed."""
     if not FEEDPARSER_AVAILABLE:
         raise ImportError(
             "feedparser library is required. Please run 'pip install feedparser'"
         )
 
-    feed = feedparser.parse(feed_url)
+    response = client.get(feed_url, timeout=timeout)
+    response.raise_for_status()
+    feed = feedparser.parse(response.content)
     if feed.bozo and not (hasattr(feed, "entries") and feed.entries):
         raise ValueError(f"Failed to parse feed: {feed_url}")
     return feed
+
 
 
 def _filter_entries_by_date(entries: list, days_back: int) -> list:
@@ -101,43 +116,40 @@ class RSSScraper(ScraperBase):
     def __init__(self, verbose: bool = True):
         super().__init__(verbose)
         self.name = "RSS"
+        self.client = get_sync_client()
 
-    def run(self, config: dict, output_dir: Path):
+    def run(self, config: RSSConfig, output_dir: Path):
         """Processes RSS feeds based on the provided configuration.
 
         Args:
-            config: The scraper-specific configuration dictionary.
+            config: The scraper-specific Pydantic configuration model.
             output_dir: The base directory Path object for raw output.
         """
         if not FEEDPARSER_AVAILABLE:
-            if self.verbose:
-                print("  - Skipping RSS scraper: 'feedparser' not installed.")
+            print_warning("Skipping RSS scraper: 'feedparser' not installed.", self.verbose)
             return
 
-        if self.verbose:
-            print("📰 Scraping RSS Feeds...")
+        print_section("📰 Scraping RSS Feeds", self.verbose)
 
-        feeds = config.get("feeds", [])
-        days_back = config.get("days_back", 7)
+        feeds = config.feeds
+        days_back = config.days_back
 
         for feed_config in feeds:
-            url = feed_config.get("url")
-            name = feed_config.get("name", "")
-            tags = feed_config.get("tags", [])
+            url = str(feed_config.url)
+            name = feed_config.name
+            tags = feed_config.tags
 
             if not url:
                 continue
 
-            if self.verbose:
-                print(f"  -> Fetching feed: {name or url}")
+            print_info(f"Fetching feed: {name or url}", self.verbose)
 
             try:
-                feed = _fetch_feed(url)
+                feed = _fetch_feed(self.client, url)
                 feed_title = name or feed.feed.get("title", "Unknown Feed")
 
                 recent_entries = _filter_entries_by_date(feed.entries, days_back)
-                if self.verbose:
-                    print(f"     Found {len(recent_entries)} recent entries.")
+                print_info(f"Found {len(recent_entries)} recent entries.", self.verbose)
 
                 for entry in recent_entries:
                     link = entry.get("link", "")
@@ -145,10 +157,10 @@ class RSSScraper(ScraperBase):
                         continue
 
                     if database.item_exists("rss", link):
-                        if self.verbose:
-                            print(
-                                f"    - Skipping (already processed): {entry.get('title', 'Untitled')[:60]}"
-                            )
+                        print_info(
+                            f"Skipping (already processed): {entry.get('title', 'Untitled')[:60]}",
+                            self.verbose,
+                        )
                         continue
 
                     # Process new entry
@@ -161,6 +173,5 @@ class RSSScraper(ScraperBase):
                     database.add_item("rss", link)
 
             except Exception as e:
-                if self.verbose:
-                    print(f"    ✗ Error processing feed {url}: {e}", file=sys.stderr)
+                print_error(f"Error processing feed {url}: {e}", self.verbose)
                 continue

@@ -7,10 +7,14 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
-import requests
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
 import database
 import utils
+from config_models import HNConfig
+from http_client import get_sync_client
+from rich_utils import print_error, print_info, print_section
 
 from .base import ScraperBase
 
@@ -25,21 +29,30 @@ class _HNClient:
     """Internal client for HackerNews APIs."""
 
     def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update(
+        self.client = get_sync_client()
+        self.client.headers.update(
             {"User-Agent": "Mozilla/5.0 Research Digest Scraper"}
         )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+        reraise=True,
+    )
     def get_item(self, item_id: int) -> dict:
         """Gets a single item by ID from the Firebase API."""
-        try:
-            url = f"{HN_API_BASE}/item/{item_id}.json"
-            response = self.session.get(url, timeout=10)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        url = f"{HN_API_BASE}/item/{item_id}.json"
+        response = self.client.get(url, timeout=10)
+        response.raise_for_status()
+        return response.json()
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+        reraise=True,
+    )
     def search_stories(self, query: str, min_points: int) -> list:
         """Searches for stories using the Algolia API."""
         params = {
@@ -49,9 +62,10 @@ class _HNClient:
             "numericFilters": f"points>={min_points}",
         }
         url = f"{HN_ALGOLIA_SEARCH}/search"
-        response = self.session.get(url, params=params, timeout=15)
+        response = self.client.get(url, params=params, timeout=15)
         response.raise_for_status()
         return [hit["objectID"] for hit in response.json().get("hits", [])]
+
 
 
 # --- Helper Functions ---
@@ -148,50 +162,45 @@ class HNScraper(ScraperBase):
         self.name = "HackerNews"
         self.client = _HNClient()
 
-    def run(self, config: dict, output_dir: Path):
+    def run(self, config: HNConfig, output_dir: Path):
         """Processes Hacker News search topics based on the provided configuration.
 
         Args:
-            config: The scraper-specific configuration dictionary.
+            config: The scraper-specific Pydantic configuration model.
             output_dir: The base directory Path object for raw output.
         """
-        if self.verbose:
-            print("📰 Scraping Hacker News...")
+        print_section("📰 Scraping Hacker News", self.verbose)
 
-        min_points = config.get("min_points", 50)
-        min_comments = config.get("min_comments", 20)
-        search_topics = config.get("search_topics", [])
+        min_points = config.min_points
+        min_comments = config.min_comments
+        search_topics = config.search_topics
 
         story_ids_to_process = set()
 
         for topic in search_topics:
-            if self.verbose:
-                print(f"  -> Searching for topic: '{topic}'")
+            print_info(f"Searching for topic: '{topic}'", self.verbose)
             try:
                 story_ids = self.client.search_stories(topic, min_points)
                 story_ids_to_process.update(story_ids)
             except Exception as e:
-                if self.verbose:
-                    print(f"     ✗ Error searching for '{topic}': {e}", file=sys.stderr)
+                print_error(f"Error searching for '{topic}': {e}", self.verbose)
 
-        if self.verbose:
-            print(
-                f"  Found {len(story_ids_to_process)} potential stories. Filtering..."
-            )
+        print_info(
+            f"Found {len(story_ids_to_process)} potential stories. Filtering...",
+            self.verbose,
+        )
 
         for story_id in story_ids_to_process:
             try:
                 if database.item_exists("hn", str(story_id)):
-                    if self.verbose:
-                        print(f"  - Skipping (already processed): Story {story_id}")
+                    print_info(f"Skipping (already processed): Story {story_id}", self.verbose)
                     continue
 
                 story = self.client.get_item(story_id)
                 if not story or story.get("descendants", 0) < min_comments:
                     continue
 
-                if self.verbose:
-                    print(f"  -> Processing story: {story.get('title', '')[:70]}")
+                print_info(f"Processing story: {story.get('title', '')[:70]}", self.verbose)
 
                 if story.get("kids"):
                     story["comments"] = _fetch_comments_recursive(
@@ -211,9 +220,5 @@ class HNScraper(ScraperBase):
                 time.sleep(1)  # Rate limit to be polite
 
             except Exception as e:
-                if self.verbose:
-                    print(
-                        f"     ✗ Error processing story {story_id}: {e}",
-                        file=sys.stderr,
-                    )
+                print_error(f"Error processing story {story_id}: {e}", self.verbose)
                 continue

@@ -8,10 +8,16 @@ For better conversion quality, consider using native tools:
   - pdftotext: PDF to text (poppler-utils package)
 """
 
-import argparse
 import re
 import sys
 from pathlib import Path
+from typing import List, Optional
+
+import typer
+
+app = typer.Typer(
+    help="Convert between document formats (txt, md, html, docx, pdf)"
+)
 
 # Check for optional dependencies
 DOCX_AVAILABLE = False
@@ -392,65 +398,82 @@ def convert_file(input_path: str, output_format: str) -> tuple:
     raise ValueError(f"Conversion from {input_format} to {output_format} not supported")
 
 
-def main():
-    """Main entry point for CLI usage."""
-    parser = argparse.ArgumentParser(
-        description="Convert between document formats (txt, md, html, docx, pdf)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s document.pdf --to txt
-  %(prog)s file.docx --to md -o output.md
-  %(prog)s *.txt --to md --batch
-  %(prog)s file1.pdf file2.pdf --to txt --batch -o converted/
-
-Native Linux Alternatives (often better quality):
-  # Universal converter (highly recommended)
-  pandoc input.docx -o output.md
-  pandoc input.md -o output.pdf
-
-  # PDF to text (better than PyPDF2)
-  pdftotext input.pdf output.txt
-
-  # Install tools
-  sudo dnf install pandoc poppler-utils
-        """,
-    )
-
-    parser.add_argument("input_files", nargs="+", help="Input file(s) to convert")
-
-    parser.add_argument(
+@app.command()
+def main(
+    input_files: List[str] = typer.Argument(
+        ...,
+        help="Input file(s) to convert",
+    ),
+    to: str = typer.Option(
+        ...,
         "--to",
-        required=True,
-        choices=["txt", "md", "html", "docx"],
-        help="Target format",
-    )
-
-    parser.add_argument(
-        "-o", "--output", help="Output file or directory (for batch mode)"
-    )
-
-    parser.add_argument(
+        help="Target format (txt, md, html, docx)",
+    ),
+    output: Optional[str] = typer.Option(
+        None,
+        "-o",
+        "--output",
+        help="Output file or directory (for batch mode)",
+    ),
+    batch: bool = typer.Option(
+        False,
         "--batch",
-        action="store_true",
         help="Batch mode - convert multiple files to directory",
-    )
+    ),
+):
+    """
+    Convert between document formats (txt, md, html, docx, pdf).
 
-    args = parser.parse_args()
+    Examples:
+
+      file_converter.py document.pdf --to txt
+
+      file_converter.py file.docx --to md -o output.md
+
+      file_converter.py *.txt --to md --batch
+
+      file_converter.py file1.pdf file2.pdf --to txt --batch -o converted/
+
+    Native Linux Alternatives (often better quality):
+
+      # Universal converter (highly recommended)
+
+      pandoc input.docx -o output.md
+
+      pandoc input.md -o output.pdf
+
+
+      # PDF to text (better than PyPDF2)
+
+      pdftotext input.pdf output.txt
+
+
+      # Install tools
+
+      sudo dnf install pandoc poppler-utils
+    """
+    # Validate format
+    valid_formats = ["txt", "md", "html", "docx"]
+    if to not in valid_formats:
+        print(
+            f"Error: Invalid format '{to}'. Choose from: {', '.join(valid_formats)}",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
 
     try:
         # Batch mode or multiple files
-        if args.batch or len(args.input_files) > 1:
-            output_dir = Path(args.output) if args.output else Path("converted")
+        if batch or len(input_files) > 1:
+            output_dir = Path(output) if output else Path("converted")
             output_dir.mkdir(parents=True, exist_ok=True)
 
             success_count = 0
-            total = len(args.input_files)
+            total = len(input_files)
 
-            print(f"Converting {total} file(s) to {args.to.upper()}...")
+            print(f"Converting {total} file(s) to {to.upper()}...")
             print(f"Output directory: {output_dir}\n")
 
-            for input_file in args.input_files:
+            for input_file in input_files:
                 input_path = Path(input_file)
 
                 if not input_path.exists():
@@ -461,10 +484,10 @@ Native Linux Alternatives (often better quality):
                     continue
 
                 try:
-                    content, ext = convert_file(str(input_path), args.to)
+                    content, ext = convert_file(str(input_path), to)
                     output_file = output_dir / f"{input_path.stem}{ext}"
 
-                    if args.to == "docx" and content is None:
+                    if to == "docx" and content is None:
                         # Special handling for markdown to docx
                         with open(input_path, "r", encoding="utf-8") as f:
                             md_to_docx(f.read(), str(output_file))
@@ -478,23 +501,23 @@ Native Linux Alternatives (often better quality):
                 except Exception as e:
                     print(f"  ✗ Error converting {input_file}: {e}", file=sys.stderr)
 
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"Completed: {success_count}/{total} files converted successfully")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
         # Single file mode
         else:
-            input_file = args.input_files[0]
+            input_file = input_files[0]
             input_path = Path(input_file)
 
             if not input_path.exists():
                 print(f"Error: {input_file} not found", file=sys.stderr)
-                sys.exit(1)
+                raise typer.Exit(1)
 
-            content, ext = convert_file(input_file, args.to)
-            output_file = args.output if args.output else f"{input_path.stem}{ext}"
+            content, ext = convert_file(input_file, to)
+            output_file = output if output else f"{input_path.stem}{ext}"
 
-            if args.to == "docx" and content is None:
+            if to == "docx" and content is None:
                 # Special handling for markdown to docx
                 with open(input_file, "r", encoding="utf-8") as f:
                     md_to_docx(f.read(), output_file)
@@ -506,8 +529,8 @@ Native Linux Alternatives (often better quality):
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    app()

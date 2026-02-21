@@ -4,10 +4,12 @@
 Downloads and formats YouTube video transcripts for NotebookLM.
 """
 
-import argparse
 import os
 import re
 import sys
+from typing import Optional
+
+import typer
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
@@ -16,6 +18,8 @@ except ImportError:
     print("Required package not found. Install with:")
     print("  pip install youtube-transcript-api")
     sys.exit(1)
+
+app = typer.Typer(help="Download YouTube transcripts for NotebookLM")
 
 
 def extract_video_id(url_or_id: str) -> str:
@@ -212,104 +216,108 @@ def save_transcript(
     return filepath
 
 
-def main():
-    """Main entry point for CLI usage."""
-    parser = argparse.ArgumentParser(
-        description="Download YouTube transcripts for NotebookLM",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s "https://youtube.com/watch?v=VIDEO_ID"
-  %(prog)s VIDEO_ID -o transcript.txt
-  %(prog)s VIDEO_ID --timestamps
-  %(prog)s VIDEO_ID --language es
-  %(prog)s VIDEO_ID --list-languages
-  %(prog)s -f video_ids.txt
-        """,
-    )
-
-    parser.add_argument("video", nargs="?", help="YouTube URL or video ID")
-
-    parser.add_argument(
+@app.command()
+def main(
+    video: Optional[str] = typer.Argument(
+        None,
+        help="YouTube URL or video ID",
+    ),
+    output: Optional[str] = typer.Option(
+        None,
         "-o",
         "--output",
         help="Output file (default: auto-generated in output directory)",
-    )
-
-    parser.add_argument(
+    ),
+    output_dir: str = typer.Option(
+        "notebooklm_sources_yt",
         "-d",
         "--output-dir",
-        default="notebooklm_sources_yt",
-        help="Output directory for auto-named files (default: notebooklm_sources_yt)",
-    )
-
-    parser.add_argument(
-        "--timestamps", action="store_true", help="Include timestamps in output"
-    )
-
-    parser.add_argument(
-        "--language", "-l", help="Preferred language code (e.g., en, es, fr)"
-    )
-
-    parser.add_argument(
+        help="Output directory for auto-named files",
+    ),
+    timestamps: bool = typer.Option(
+        False,
+        "--timestamps",
+        help="Include timestamps in output",
+    ),
+    language: Optional[str] = typer.Option(
+        None,
+        "-l",
+        "--language",
+        help="Preferred language code (e.g., en, es, fr)",
+    ),
+    list_languages: bool = typer.Option(
+        False,
         "--list-languages",
-        action="store_true",
         help="List available transcript languages",
-    )
+    ),
+    file: Optional[str] = typer.Option(
+        None,
+        "-f",
+        "--file",
+        help="Read video IDs/URLs from file (one per line)",
+    ),
+):
+    """
+    Download YouTube transcripts for NotebookLM.
 
-    parser.add_argument(
-        "-f", "--file", help="Read video IDs/URLs from file (one per line)"
-    )
+    Examples:
 
-    args = parser.parse_args()
+      youtube_transcript.py "https://youtube.com/watch?v=VIDEO_ID"
 
+      youtube_transcript.py VIDEO_ID -o transcript.txt
+
+      youtube_transcript.py VIDEO_ID --timestamps
+
+      youtube_transcript.py VIDEO_ID --language es
+
+      youtube_transcript.py VIDEO_ID --list-languages
+
+      youtube_transcript.py -f video_ids.txt
+    """
     # Collect video IDs
     video_inputs = []
 
-    if args.file:
+    if file:
         try:
-            with open(args.file, "r", encoding="utf-8") as f:
+            with open(file, "r", encoding="utf-8") as f:
                 video_inputs = [
                     line.strip()
                     for line in f
                     if line.strip() and not line.startswith("#")
                 ]
         except IOError as e:
-            print(f"Error reading file '{args.file}': {e}", file=sys.stderr)
-            sys.exit(1)
-    elif args.video:
-        video_inputs = [args.video]
+            print(f"Error reading file '{file}': {e}", file=sys.stderr)
+            raise typer.Exit(1)
+    elif video:
+        video_inputs = [video]
     else:
-        parser.print_help()
         print(
             "\nError: No video provided. Use a video URL/ID or specify a file with -f",
             file=sys.stderr,
         )
-        sys.exit(1)
+        raise typer.Exit(1)
 
     # Process videos
     success_count = 0
-    languages = [args.language] if args.language else None
+    languages = [language] if language else None
 
     for i, video_input in enumerate(video_inputs, 1):
         try:
             video_id = extract_video_id(video_input)
 
-            if args.list_languages:
+            if list_languages:
                 list_available_languages(video_id)
                 continue
 
             print(f"\n[{i}/{len(video_inputs)}] Processing: {video_id}")
 
-            transcript = get_transcript(video_id, languages, args.timestamps)
+            transcript = get_transcript(video_id, languages, timestamps)
 
             # For batch processing, ignore -o flag and auto-generate filenames
-            output_path = args.output if len(video_inputs) == 1 else None
+            output_path = output if len(video_inputs) == 1 else None
 
-            if output_path or not args.output:
-                filepath = save_transcript(
-                    video_id, transcript, output_path, args.output_dir
-                )
+            if output_path or not output:
+                filepath = save_transcript(video_id, transcript, output_path, output_dir)
                 print(f"  ✓ Saved to: {filepath}")
                 success_count += 1
             else:
@@ -334,10 +342,10 @@ Examples:
             print(f"  ✗ Unexpected error with {video_input}: {e}", file=sys.stderr)
 
     if len(video_inputs) > 1:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Completed: {success_count}/{len(video_inputs)} transcripts saved")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
 
 if __name__ == "__main__":
-    main()
+    app()

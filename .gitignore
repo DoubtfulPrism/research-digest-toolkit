@@ -53,3 +53,15 @@ bookmarked_threads.txt
 *.tmp
 *.bak
 *.cache
+=*.*  # Pip installation logs (=0.9.0, =13.7.0, etc.)
+
+# Testing & Coverage
+htmlcov/
+.coverage
+.pytest_cache/
+
+# HTTP Cache
+http_cache/
+
+# Archive (completed planning docs)
+docs/archive/

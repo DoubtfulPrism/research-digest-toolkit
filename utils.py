@@ -5,6 +5,8 @@ import re
 import sys
 from pathlib import Path
 
+from rich_utils import print_error, print_success
+
 
 def generate_filename(source: str, title: str, unique_id: str) -> str:
     """Generates a sanitized, consistent filename for a piece of content.
@@ -45,18 +47,12 @@ def save_document(filepath: Path, content: str, verbose: bool = True):
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
 
-        if verbose:
-            print(f"    ✓ Saved: {filepath.name}")
+        print_success(f"Saved: {filepath.name}", verbose)
 
     except IOError as e:
-        if verbose:
-            print(f"    ✗ Error saving file {filepath.name}: {e}", file=sys.stderr)
+        print_error(f"Error saving file {filepath.name}: {e}", verbose)
     except Exception as e:
-        if verbose:
-            print(
-                f"    ✗ Unexpected error saving file {filepath.name}: {e}",
-                file=sys.stderr,
-            )
+        print_error(f"Unexpected error saving file {filepath.name}: {e}", verbose)
 
 
 def clean_html(html_text: str) -> str:

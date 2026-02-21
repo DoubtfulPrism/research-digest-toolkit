@@ -35,6 +35,8 @@ Automatically discovers, scrapes, and organizes content from:
 
 - **10 specialized tools** - Each optimized for specific content sources
 - **Automated orchestration** - One command to rule them all
+- **Beautiful console output** - Rich progress bars, color-coded status, formatted tables
+- **Resilient network operations** - Automatic retries with exponential backoff
 - **Native tool integration** - Uses `pandoc` & `pdftotext` for quality
 - **Obsidian-ready** - YAML frontmatter + auto-tagging
 - **NotebookLM-ready** - Automatic file splitting at 400k char limit
@@ -113,8 +115,11 @@ scrapers:
 # Make scripts executable
 chmod +x *.py *.sh
 
-# Run the digest
+# Run the digest once
 ./research_digest.py
+
+# Or, run on a schedule (e.g., every 4 hours)
+./research_digest.py --schedule "every(4).hours"
 
 # Check results
 cat research_digest/$(date +%Y-%m-%d)/REPORT.md
@@ -122,12 +127,20 @@ cat research_digest/$(date +%Y-%m-%d)/REPORT.md
 
 ### 4. Automate (Optional)
 
+The tool now includes a built-in scheduler. You can run the digest on a schedule using the `--schedule` flag.
+
+```bash
+# Weekly digest every Monday at 9 AM
+./research_digest.py --schedule "every().monday.at('09:00')"
+```
+
+Alternatively, you can use a cron job for more advanced scheduling needs.
 ```bash
 # Weekly digest every Monday at 9 AM
 crontab -e
 
 # Add this line:
-0 9 * * 1 cd /path/to/Scripts && ./research_digest.py
+0 9 * * 1 cd /path/to/Scripts && ./research_digest.py --run-once
 ```
 
 ---
@@ -136,6 +149,7 @@ crontab -e
 
 - **[README.md](README.md)** - Detailed tool documentation
 - **[AUTOMATION_GUIDE.md](AUTOMATION_GUIDE.md)** - Complete automation guide
+- **[MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md)** - Library modernization roadmap
 - **[NATIVE_ALTERNATIVES.md](NATIVE_ALTERNATIVES.md)** - Native Linux tools guide
 - **[NATIVE_TOOLS_SUMMARY.md](NATIVE_TOOLS_SUMMARY.md)** - Where we use native vs Python
 - **[THREAD_READER_GUIDE.md](THREAD_READER_GUIDE.md)** - Twitter thread collection guide
@@ -327,8 +341,10 @@ MIT License - See [LICENSE](LICENSE) file
 - [NotebookLM](https://notebooklm.google.com/) - AI-powered research synthesis
 - Reddit academic workflows - Community inspiration
 
-### Tools
+### Tools & Libraries
 - **Python** - Primary language
+- **Rich** - Beautiful terminal output with progress bars and formatting
+- **Tenacity** - Automatic retry logic with exponential backoff
 - **pandoc** - Universal document converter
 - **poppler-utils** - PDF text extraction
 - Various Python libraries (see requirements.txt)
@@ -352,8 +368,16 @@ MIT License - See [LICENSE](LICENSE) file
 - Documentation
 - Error handling and edge cases
 - Tool selection and integration
+- Library modernization recommendations
 
 **Result:** A production-ready toolkit built faster than solo development, with better code quality through AI-assisted review.
+
+**Recent Modernization (January 2026):**
+- **Phase 1 Complete:** Migrated to `rich` library for enhanced terminal output with progress bars, color-coded messages, and formatted tables
+- **Phase 2 Complete:** Integrated `tenacity` library for automatic retry logic with exponential backoff on all network requests
+- **Phase 3 Complete:** Migrated to `typer` library for modern CLI framework with type hints, better help output, and shell completion
+
+See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for complete details and roadmap.
 
 ---
 
@@ -395,9 +419,15 @@ All tools are:
 
 ## 🗺️ Roadmap
 
-Potential future additions:
+**Active Modernization (In Progress):**
+- [x] Phase 1: Rich library integration - Enhanced console output ✅
+- [x] Phase 2: Tenacity - Automatic retry logic for network requests ✅
+- [x] Phase 3: Typer - Modern CLI framework ✅
+- [ ] Phase 4: Pydantic - Configuration validation
+- [ ] Phase 5: HTTPX + DiskCache - Async HTTP with caching
+
+**Potential Future Features:**
 - [ ] Mastodon/Fediverse integration
-- [ ] arXiv paper monitoring
 - [ ] Google Scholar alerts → RSS
 - [ ] Slack/Discord notifications
 - [ ] Email digest formatting
@@ -410,5 +440,5 @@ Potential future additions:
 
 ---
 
-*Last updated: December 2024*
+*Last updated: January 2026*
 *Development approach: Vibecoded (AI-assisted)*

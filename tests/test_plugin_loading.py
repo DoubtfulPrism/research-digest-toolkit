@@ -53,16 +53,19 @@ class TestResearchDigestInit:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         assert digest.config is not None
-        assert isinstance(digest.config, dict)
+        from config_models import ResearchDigestConfig
+        assert isinstance(digest.config, ResearchDigestConfig)
         assert digest.verbose is False
 
     def test_initialization_loads_config(self, temp_config):
         """Test that config is loaded correctly."""
         digest = ResearchDigest(str(temp_config), verbose=False)
 
-        assert "scrapers" in digest.config
-        assert "output" in digest.config
-        assert digest.config["days_back"] == 7
+        from config_models import ResearchDigestConfig
+        assert isinstance(digest.config, ResearchDigestConfig)
+        assert hasattr(digest.config, "scrapers")
+        assert hasattr(digest.config, "output")
+        assert digest.config.days_back == 7
 
     def test_initialization_with_verbose(self, temp_config):
         """Test that verbose flag is respected."""
@@ -283,7 +286,17 @@ class TestRunScrapers:
 
         # Mock scraper should have received its config
         assert len(configs_received) == 1
-        assert configs_received[0]["test_value"] == 123
+        # Config is now a Pydantic model, access via attribute
+        received_config = configs_received[0]
+        # The mocktest config will be a dict because it's an extra field
+        if hasattr(received_config, 'test_value'):
+            assert received_config.test_value == 123
+        elif hasattr(received_config, '__getitem__'):
+            assert received_config["test_value"] == 123
+        else:
+            # Try model_dump if it's a Pydantic model
+            config_dict = received_config.model_dump()
+            assert config_dict.get("test_value") == 123
 
     def test_scraper_errors_are_caught(self, temp_config, tmp_path, monkeypatch):
         """Test that errors from scrapers don't crash the entire pipeline."""
@@ -309,12 +322,22 @@ class TestLoadConfig:
         """Test that valid YAML is loaded correctly."""
         digest = ResearchDigest(str(temp_config), verbose=False)
 
-        assert isinstance(digest.config, dict)
-        assert "scrapers" in digest.config
+        from config_models import ResearchDigestConfig
+        assert isinstance(digest.config, ResearchDigestConfig)
+        assert hasattr(digest.config, "scrapers")
 
     def test_handles_nested_config(self, tmp_path):
         """Test that nested configuration is preserved."""
-        config = {"level1": {"level2": {"level3": "value"}}}
+        # With Pydantic models, we need valid config structure
+        config = {
+            "output": {"base_dir": str(tmp_path / "output")},
+            "scrapers": {
+                "hackernews": {"enabled": False},
+                "rss": {"enabled": False},
+                "reddit": {"enabled": False},
+                "arxiv": {"enabled": False},
+            },
+        }
 
         config_path = tmp_path / "nested.yaml"
         with open(config_path, "w", encoding="utf-8") as f:
@@ -322,17 +345,18 @@ class TestLoadConfig:
 
         digest = ResearchDigest(str(config_path), verbose=False)
 
-        assert digest.config["level1"]["level2"]["level3"] == "value"
+        # Access via attribute access instead of dict subscripting
+        assert digest.config.output.base_dir == str(tmp_path / "output")
 
     def test_handles_empty_config(self, tmp_path):
         """Test that empty config file is handled."""
         config_path = tmp_path / "empty.yaml"
         config_path.write_text("", encoding="utf-8")
 
-        digest = ResearchDigest(str(config_path), verbose=False)
-
-        # Empty YAML should return None or empty dict
-        assert digest.config is None or digest.config == {}
+        # With Pydantic validation, empty config should fail or use defaults
+        # This will likely raise an error during initialization
+        with pytest.raises(SystemExit):
+            digest = ResearchDigest(str(config_path), verbose=False)
 
 
 @pytest.mark.integration
@@ -373,7 +397,10 @@ class TestCompleteWorkflow:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         scraper_names = [s.name.lower() for s in digest.scrapers]
-        config_keys = digest.config.get("scrapers", {}).keys()
+        # Access scrapers config from Pydantic model
+        from config_models import ScrapersConfig
+        scrapers_dict = digest.config.scrapers.model_dump()
+        config_keys = scrapers_dict.keys()
 
         # At least some scraper names should match config keys
         matches = [name for name in scraper_names if name in config_keys]

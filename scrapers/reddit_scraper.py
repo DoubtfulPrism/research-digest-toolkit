@@ -6,41 +6,58 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import requests
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
 import database
 import utils
+from config_models import RedditConfig
+from http_client import get_sync_client
+from rich_utils import print_error, print_info, print_section
 
 from .base import ScraperBase
 
 # --- Helper Functions ---
 
 
-def _fetch_subreddit(subreddit: str, time_filter: str, limit: int) -> list:
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    reraise=True,
+)
+def _fetch_subreddit(client: httpx.Client, subreddit: str, time_filter: str, limit: int) -> list:
     """Fetches posts from a subreddit's JSON API."""
     url = f"https://www.reddit.com/r/{subreddit}/top.json"
     params = {"limit": limit, "t": time_filter}
     headers = {"User-Agent": "Mozilla/5.0 Research Digest Scraper"}
 
-    response = requests.get(url, params=params, headers=headers, timeout=15)
+    response = client.get(url, params=params, headers=headers, timeout=15)
     response.raise_for_status()
     data = response.json()
     return [child["data"] for child in data.get("data", {}).get("children", [])]
 
 
-def _fetch_comments(post_id: str, subreddit: str, limit: int) -> list:
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    reraise=True,
+)
+def _fetch_comments(client: httpx.Client, post_id: str, subreddit: str, limit: int) -> list:
     """Fetches comments for a given post."""
     url = f"https://www.reddit.com/r/{subreddit}/comments/{post_id}.json"
     params = {"limit": limit, "depth": 3}
     headers = {"User-Agent": "Mozilla/5.0 Research Digest Scraper"}
 
-    response = requests.get(url, params=params, headers=headers, timeout=15)
+    response = client.get(url, params=params, headers=headers, timeout=15)
     response.raise_for_status()
     data = response.json()
 
     if len(data) > 1 and "data" in data[1] and "children" in data[1]["data"]:
         return _extract_comments_recursive(data[1]["data"]["children"])
     return []
+
 
 
 def _extract_comments_recursive(children: list, depth: int = 0) -> list:
@@ -121,33 +138,32 @@ class RedditScraper(ScraperBase):
     def __init__(self, verbose: bool = True):
         super().__init__(verbose)
         self.name = "Reddit"
+        self.client = get_sync_client()
 
-    def run(self, config: dict, output_dir: Path):
+    def run(self, config: RedditConfig, output_dir: Path):
         """Processes subreddits based on the provided configuration.
 
         Args:
-            config: The scraper-specific configuration dictionary.
+            config: The scraper-specific Pydantic configuration model.
             output_dir: The base directory Path object for raw output.
         """
-        if self.verbose:
-            print("💬 Scraping Reddit...")
+        print_section("💬 Scraping Reddit", self.verbose)
 
-        subreddits = config.get("subreddits", [])
-        time_filter = config.get("time_filter", "week")
+        subreddits = config.subreddits
+        time_filter = config.time_filter
 
         for sub_config in subreddits:
-            subreddit = sub_config.get("name")
-            min_upvotes = sub_config.get("min_upvotes", 50)
-            tags = sub_config.get("tags", [])
+            subreddit = sub_config.name
+            min_upvotes = sub_config.min_upvotes
+            tags = sub_config.tags
 
             if not subreddit:
                 continue
 
-            if self.verbose:
-                print(f"  -> Fetching r/{subreddit} (min {min_upvotes} upvotes)")
+            print_info(f"Fetching r/{subreddit} (min {min_upvotes} upvotes)", self.verbose)
 
             try:
-                posts = _fetch_subreddit(subreddit, time_filter, limit=50)
+                posts = _fetch_subreddit(self.client, subreddit, time_filter, limit=50)
 
                 for post in posts:
                     post_id = post.get("id")
@@ -155,18 +171,18 @@ class RedditScraper(ScraperBase):
                         continue
 
                     if database.item_exists("reddit", post_id):
-                        if self.verbose:
-                            print(
-                                f"    - Skipping (already processed): {post.get('title', 'Untitled')[:60]}"
-                            )
+                        print_info(
+                            f"Skipping (already processed): {post.get('title', 'Untitled')[:60]}",
+                            self.verbose,
+                        )
                         continue
 
-                    if self.verbose:
-                        print(
-                            f"    -> Processing post: {post.get('title', 'Untitled')[:60]}"
-                        )
+                    print_info(
+                        f"Processing post: {post.get('title', 'Untitled')[:60]}",
+                        self.verbose,
+                    )
 
-                    comments = _fetch_comments(post_id, subreddit, limit=50)
+                    comments = _fetch_comments(self.client, post_id, subreddit, limit=50)
                     comments.sort(key=lambda c: c["score"], reverse=True)
 
                     content = _format_post(post, comments, tags)
@@ -180,9 +196,5 @@ class RedditScraper(ScraperBase):
                     time.sleep(1)  # Rate limit to be polite
 
             except Exception as e:
-                if self.verbose:
-                    print(
-                        f"    ✗ Error processing subreddit r/{subreddit}: {e}",
-                        file=sys.stderr,
-                    )
+                print_error(f"Error processing subreddit r/{subreddit}: {e}", self.verbose)
                 continue

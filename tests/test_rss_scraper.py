@@ -13,22 +13,26 @@ Pattern established here will be replicated for other scrapers.
 """
 
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch
-
+import httpx
 import pytest
+from unittest.mock import Mock, patch
+from datetime import datetime, timedelta
 
-# Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import database
+from config_models import RSSConfig, RSSFeed
+
+from pydantic import ValidationError
 from scrapers.rss_scraper import (
     RSSScraper,
     _fetch_feed,
     _filter_entries_by_date,
     _format_entry,
 )
+from config_models import RSSConfig
+import database
+
 
 # ============================================================================
 # FIXTURES - Reusable test data
@@ -135,56 +139,59 @@ def mock_feedparser_response(mock_feed_entry):
 class TestFetchFeed:
     """Tests for _fetch_feed helper function."""
 
-    @patch("scrapers.rss_scraper.feedparser")
-    def test_fetch_feed_success(self, mock_feedparser, mock_feedparser_response):
+    def test_fetch_feed_success(self, httpx_mock, mock_feedparser_response):
         """Test successful feed fetch and parse."""
         # Arrange
-        mock_feedparser.parse.return_value = mock_feedparser_response
+        httpx_mock.add_response(content=b"")
         feed_url = "https://example.com/feed.xml"
+        client = httpx.Client()
 
-        # Act
-        result = _fetch_feed(feed_url)
+        with patch("feedparser.parse", return_value=mock_feedparser_response):
+            # Act
+            result = _fetch_feed(client, feed_url)
 
-        # Assert
-        mock_feedparser.parse.assert_called_once_with(feed_url)
-        assert result == mock_feedparser_response
-        assert len(result.entries) > 0
+            # Assert
+            assert result == mock_feedparser_response
+            assert len(result.entries) > 0
 
-    @patch("scrapers.rss_scraper.feedparser")
-    def test_fetch_feed_parsing_error(self, mock_feedparser):
+    def test_fetch_feed_parsing_error(self, httpx_mock):
         """Test handling of feed parsing errors."""
         # Arrange
+        httpx_mock.add_response(content=b"")
         bad_feed = Mock()
         bad_feed.bozo = True  # Parsing error
         bad_feed.entries = []  # No entries
-        mock_feedparser.parse.return_value = bad_feed
+        client = httpx.Client()
 
-        # Act & Assert
-        with pytest.raises(ValueError, match="Failed to parse feed"):
-            _fetch_feed("https://example.com/bad-feed.xml")
+        with patch("feedparser.parse", return_value=bad_feed):
+            # Act & Assert
+            with pytest.raises(ValueError, match="Failed to parse feed"):
+                _fetch_feed(client, "https://example.com/bad-feed.xml")
 
     @patch("scrapers.rss_scraper.FEEDPARSER_AVAILABLE", False)
     def test_fetch_feed_no_feedparser(self):
         """Test error when feedparser is not installed."""
+        client = httpx.Client()
         # Act & Assert
         with pytest.raises(ImportError, match="feedparser library is required"):
-            _fetch_feed("https://example.com/feed.xml")
+            _fetch_feed(client, "https://example.com/feed.xml")
 
-    @patch("scrapers.rss_scraper.feedparser")
-    def test_fetch_feed_with_entries_despite_bozo(self, mock_feedparser):
+    def test_fetch_feed_with_entries_despite_bozo(self, httpx_mock):
         """Test that feeds with bozo=True but valid entries still work."""
         # Arrange - Some feeds have minor issues but still have entries
+        httpx_mock.add_response(content=b"")
         feed = Mock()
         feed.bozo = True  # Has parsing warnings
         feed.entries = [Mock()]  # But has valid entries
-        mock_feedparser.parse.return_value = feed
+        client = httpx.Client()
 
-        # Act
-        result = _fetch_feed("https://example.com/feed.xml")
+        with patch("feedparser.parse", return_value=feed):
+            # Act
+            result = _fetch_feed(client, "https://example.com/feed.xml")
 
-        # Assert
-        assert result == feed
-        assert len(result.entries) > 0
+            # Assert
+            assert result == feed
+            assert len(result.entries) > 0
 
 
 @pytest.mark.unit
@@ -432,14 +439,14 @@ class TestRSSScraperRun:
         """Test that scraper gracefully skips if feedparser not installed."""
         # Arrange
         scraper = RSSScraper(verbose=True)
-        config = {"feeds": [{"url": "https://example.com/feed.xml"}]}
+        config = RSSConfig(feeds=[{"url": "https://example.com/feed.xml", "name": "Test Feed"}])
 
         # Act
         scraper.run(config, tmp_path)
 
         # Assert
         captured = capsys.readouterr()
-        assert "feedparser' not installed" in captured.out
+        assert "feedparser' not installed" in captured.err
 
     @patch("scrapers.rss_scraper.FEEDPARSER_AVAILABLE", True)
     @patch("scrapers.rss_scraper._fetch_feed")
@@ -447,7 +454,7 @@ class TestRSSScraperRun:
         """Test run with empty feeds configuration."""
         # Arrange
         scraper = RSSScraper(verbose=False)
-        config = {"feeds": []}
+        config = RSSConfig(feeds=[])
 
         # Act
         scraper.run(config, tmp_path)
@@ -465,16 +472,16 @@ class TestRSSScraperRun:
         scraper = RSSScraper(verbose=False)
         mock_fetch.return_value = mock_feedparser_response
 
-        config = {
-            "feeds": [
+        config = RSSConfig(
+            feeds=[
                 {
                     "url": "https://example.com/feed.xml",
                     "name": "Test Feed",
                     "tags": ["test"],
                 }
             ],
-            "days_back": 7,
-        }
+            days_back=7,
+        )
 
         # Mock database to allow all items
         def mock_item_exists(source, unique_id):
@@ -494,7 +501,7 @@ class TestRSSScraperRun:
         scraper.run(config, tmp_path)
 
         # Assert
-        mock_fetch.assert_called_once_with("https://example.com/feed.xml")
+        mock_fetch.assert_called_once_with(scraper.client, "https://example.com/feed.xml")
 
         # Check files were created
         rss_dir = tmp_path / "rss"
@@ -517,10 +524,11 @@ class TestRSSScraperRun:
         scraper = RSSScraper(verbose=False)
         mock_fetch.return_value = mock_feedparser_response
 
-        config = {
-            "feeds": [{"url": "https://example.com/feed.xml"}],
-            "days_back": 7,
-        }
+        config = RSSConfig(
+            enabled=True,
+            feeds=[RSSFeed(url="https://example.com/feed.xml")],
+            days_back=7,
+        )
 
         # Mock database to say item exists
         def mock_item_exists(source, unique_id):
@@ -554,10 +562,11 @@ class TestRSSScraperRun:
         scraper = RSSScraper(verbose=True)
         mock_fetch.side_effect = ValueError("Feed parsing failed")
 
-        config = {
-            "feeds": [{"url": "https://example.com/bad-feed.xml"}],
-            "days_back": 7,
-        }
+        config = RSSConfig(
+            enabled=True,
+            feeds=[RSSFeed(url="https://example.com/bad-feed.xml")],
+            days_back=7,
+        )
 
         # Act
         scraper.run(config, tmp_path)
@@ -608,13 +617,14 @@ class TestRSSScraperRun:
 
         mock_fetch.side_effect = [feed1, feed2]
 
-        config = {
-            "feeds": [
-                {"url": "https://example.com/feed1.xml"},
-                {"url": "https://example.com/feed2.xml"},
+        config = RSSConfig(
+            enabled=True,
+            feeds=[
+                RSSFeed(url="https://example.com/feed1.xml"),
+                RSSFeed(url="https://example.com/feed2.xml"),
             ],
-            "days_back": 7,
-        }
+            days_back=7,
+        )
 
         monkeypatch.setattr(database, "item_exists", lambda s, i: False)
         monkeypatch.setattr(database, "add_item", lambda s, i: None)
@@ -648,7 +658,11 @@ class TestRSSScraperRun:
         mock_fetch.return_value = feed
 
         # Config with days_back=7 (entry is 30 days old, should be filtered)
-        config = {"feeds": [{"url": "https://example.com/feed.xml"}], "days_back": 7}
+        config = RSSConfig(
+            enabled=True,
+            feeds=[RSSFeed(url="https://example.com/feed.xml")],
+            days_back=7
+        )
 
         monkeypatch.setattr(database, "item_exists", lambda s, i: False)
 
@@ -681,7 +695,11 @@ class TestRSSScraperRun:
 
         mock_fetch.return_value = feed
 
-        config = {"feeds": [{"url": "https://example.com/feed.xml"}], "days_back": 7}
+        config = RSSConfig(
+            enabled=True,
+            feeds=[RSSFeed(url="https://example.com/feed.xml")],
+            days_back=7
+        )
 
         monkeypatch.setattr(database, "item_exists", lambda s, i: False)
 
@@ -704,21 +722,17 @@ class TestRSSScraperRun:
 class TestRSSScraperEdgeCases:
     """Tests for edge cases and error conditions."""
 
-    @patch("scrapers.rss_scraper.FEEDPARSER_AVAILABLE", True)
-    @patch("scrapers.rss_scraper._fetch_feed")
-    def test_run_with_feed_missing_url(self, mock_fetch, tmp_path):
-        """Test that feeds without URL are skipped."""
+    def test_run_with_feed_missing_url(self, tmp_path):
+        """Test that RSSFeed validation fails without URL."""
         # Arrange
         scraper = RSSScraper(verbose=False)
-        config = {
-            "feeds": [{"name": "Feed without URL", "tags": ["test"]}]  # No 'url' key
-        }
 
-        # Act
-        scraper.run(config, tmp_path)
-
-        # Assert
-        mock_fetch.assert_not_called()  # Feed skipped
+        # Act & Assert - Pydantic should raise ValidationError for missing URL
+        with pytest.raises(Exception):  # Could be ValidationError or TypeError
+            config = RSSConfig(
+                enabled=True,
+                feeds=[RSSFeed(name="Feed without URL", tags=["test"])]  # Missing URL
+            )
 
     def test_filter_entries_with_empty_list(self):
         """Test filtering empty entries list."""

@@ -4,13 +4,41 @@
 Scrapes web pages and saves them as clean text files suitable for NotebookLM.
 """
 
-import argparse
 import os
 import re
 import sys
+from typing import List, Optional
 
-import requests
-from bs4 import BeautifulSoup
+import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+
+from http_client import get_sync_client
+from rich_utils import (
+    create_progress_bar,
+    create_summary_table,
+    get_console,
+    print_error,
+    print_header,
+    print_info,
+    print_success,
+)
+
+app = typer.Typer(help="Scrape web pages and save as clean text files")
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    reraise=True,
+)
+def make_resilient_request_httpx(client: httpx.Client, url: str, **kwargs):
+    """
+    Makes a resilient HTTP GET request using httpx.
+    """
+    response = client.get(url, **kwargs)
+    response.raise_for_status()
+    return response
 
 
 def clean_html_content(html_content):
@@ -57,11 +85,13 @@ def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
         urls: List of URLs to scrape
         output_dir: Directory to save output files
     """
+    console = get_console(True)
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-        print(f"Created output directory: '{output_dir}'")
+        print_info(f"Created output directory: '{output_dir}'")
 
-    print(f"Saving cleaned articles to '{output_dir}' directory...")
+    print_header("Web Scraper", f"Saving to '{output_dir}' directory")
 
     # Add user agent to avoid being blocked
     headers = {
@@ -69,101 +99,114 @@ def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
     }
 
     success_count = 0
+    client = get_sync_client()
 
-    for i, url in enumerate(urls):
-        try:
-            print(f"\nFetching [{i+1}/{len(urls)}]: {url}")
-            response = requests.get(url, timeout=10, headers=headers)
-            response.raise_for_status()
+    with create_progress_bar() as progress:
+        task = progress.add_task("[cyan]Scraping URLs...", total=len(urls))
 
-            clean_text = clean_html_content(response.content)
+        for i, url in enumerate(urls):
+            try:
+                progress.update(task, description=f"[cyan]Fetching [{i+1}/{len(urls)}]: {url[:50]}...")
+                response = make_resilient_request_httpx(client, url, timeout=10, headers=headers)
 
-            # Extract page title for filename
-            title_soup = BeautifulSoup(response.content, "html.parser")
-            page_title = (
-                title_soup.title.string if title_soup.title else f"article_{i+1}"
-            )
+                clean_text = clean_html_content(response.content)
 
-            # Sanitize filename (cross-platform safe)
-            filename_base = re.sub(r'[\\/:*?"<>|]', "_", page_title).strip()
-            filename = f"{filename_base[:50].strip() or f'article_{i+1}'}.txt"
+                # Extract page title for filename
+                title_soup = BeautifulSoup(response.content, "html.parser")
+                page_title = (
+                    title_soup.title.string if title_soup.title else f"article_{i+1}"
+                )
 
-            output_path = os.path.join(output_dir, filename)
+                # Sanitize filename (cross-platform safe)
+                filename_base = re.sub(r'[\\/:*?"<>|]', "_", page_title).strip()
+                filename = f"{filename_base[:50].strip() or f'article_{i+1}'}.txt"
 
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(clean_text)
+                output_path = os.path.join(output_dir, filename)
 
-            file_size = len(clean_text)
-            print(f"  ✓ Success: Saved as '{filename}' ({file_size} chars)")
-            success_count += 1
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(clean_text)
 
-        except requests.exceptions.RequestException as e:
-            print(f"  ✗ Error fetching {url}: {e}", file=sys.stderr)
-        except IOError as e:
-            print(f"  ✗ Error writing file for {url}: {e}", file=sys.stderr)
-        except Exception as e:
-            print(f"  ✗ Unexpected error with {url}: {e}", file=sys.stderr)
+                file_size = len(clean_text)
+                print_success(f"Saved '{filename}' ({file_size:,} chars)")
+                success_count += 1
 
-    print(f"\n{'='*60}")
-    print(f"Completed: {success_count}/{len(urls)} articles saved successfully")
-    print(f"{'='*60}")
+            except httpx.RequestError as e:
+                print_error(f"Error fetching {url}: {e}")
+            except IOError as e:
+                print_error(f"Error writing file for {url}: {e}")
+            except Exception as e:
+                print_error(f"Unexpected error with {url}: {e}")
+
+            progress.advance(task)
+
+    # Create summary table
+    table = create_summary_table("Scraping Results", ["Metric", "Value"])
+    table.add_row("Total URLs", str(len(urls)))
+    table.add_row("Successful", str(success_count), style="green")
+    table.add_row("Failed", str(len(urls) - success_count), style="red" if len(urls) - success_count > 0 else "")
+
+    console.print("\n")
+    console.print(table)
 
 
-def main():
-    """Main entry point for CLI usage."""
-    parser = argparse.ArgumentParser(
-        description="Scrape web pages and save as clean text files",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s https://example.com
-  %(prog)s https://example.com https://another-site.com
-  %(prog)s -o output_folder https://example.com
-  %(prog)s -f urls.txt
-        """,
-    )
-
-    parser.add_argument("urls", nargs="*", help="URLs to scrape (space-separated)")
-
-    parser.add_argument(
-        "-f", "--file", help="Read URLs from a text file (one URL per line)"
-    )
-
-    parser.add_argument(
-        "-o",
+@app.command()
+def main(
+    urls: Optional[List[str]] = typer.Argument(
+        None,
+        help="URLs to scrape (space-separated)",
+    ),
+    file: Optional[str] = typer.Option(
+        None,
+        "--file",
+        "-f",
+        help="Read URLs from a text file (one URL per line)",
+    ),
+    output: str = typer.Option(
+        "notebooklm_sources_web",
         "--output",
-        default="notebooklm_sources_web",
-        help="Output directory (default: notebooklm_sources_web)",
-    )
+        "-o",
+        help="Output directory",
+    ),
+):
+    """
+    Scrape web pages and save as clean text files.
 
-    args = parser.parse_args()
+    Examples:
 
+      web_scraper.py https://example.com
+
+      web_scraper.py https://example.com https://another-site.com
+
+      web_scraper.py -o output_folder https://example.com
+
+      web_scraper.py -f urls.txt
+    """
     # Collect URLs from arguments or file
-    urls = list(args.urls) if args.urls else []
+    url_list = list(urls) if urls else []
 
-    if args.file:
+    if file:
         try:
-            with open(args.file, "r", encoding="utf-8") as f:
+            with open(file, "r", encoding="utf-8") as f:
                 file_urls = [
                     line.strip()
                     for line in f
                     if line.strip() and not line.startswith("#")
                 ]
-                urls.extend(file_urls)
+                url_list.extend(file_urls)
         except IOError as e:
-            print(f"Error reading file '{args.file}': {e}", file=sys.stderr)
-            sys.exit(1)
+            console = get_console(True)
+            console.print(f"[error]Error reading file '{file}': {e}[/error]")
+            raise typer.Exit(1)
 
-    if not urls:
-        parser.print_help()
-        print(
-            "\nError: No URLs provided. Use URLs as arguments or specify a file with -f",
-            file=sys.stderr,
+    if not url_list:
+        console = get_console(True)
+        console.print(
+            "[error]Error: No URLs provided. Use URLs as arguments or specify a file with -f[/error]"
         )
-        sys.exit(1)
+        raise typer.Exit(1)
 
-    scrape_and_save(urls, args.output)
+    scrape_and_save(url_list, output)
 
 
 if __name__ == "__main__":
-    main()
+    app()

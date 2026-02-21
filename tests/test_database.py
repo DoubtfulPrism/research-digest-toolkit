@@ -29,8 +29,11 @@ def temp_db(monkeypatch):
     # Patch the database module's DB_PATH
     monkeypatch.setattr(database, "DB_PATH", temp_db_path)
 
+    # Reset initialization flag for each test
+    monkeypatch.setattr(database, "_db_initialized", False)
+
     # Initialize the database with the new path
-    database.init_db()
+    database.init_db(str(temp_db_path))
 
     yield temp_db_path
 
@@ -85,10 +88,13 @@ class TestDatabaseInit:
         con = sqlite3.connect(temp_db)
         cur = con.cursor()
 
+        # Use ISO format timestamp (Python 3.12+ compatible)
+        timestamp = datetime.now().isoformat()
+
         # Insert first item
         cur.execute(
             "INSERT INTO processed_items (source, unique_id, processed_at) VALUES (?, ?, ?)",
-            ("hn", "item123", datetime.now()),
+            ("hn", "item123", timestamp),
         )
         con.commit()
 
@@ -96,7 +102,7 @@ class TestDatabaseInit:
         with pytest.raises(sqlite3.IntegrityError):
             cur.execute(
                 "INSERT INTO processed_items (source, unique_id, processed_at) VALUES (?, ?, ?)",
-                ("hn", "item123", datetime.now()),
+                ("hn", "item123", timestamp),
             )
             con.commit()
 
@@ -136,8 +142,11 @@ class TestItemExists:
     def test_item_exists_handles_database_errors_gracefully(self, temp_db, monkeypatch):
         """Test that item_exists returns False on database errors."""
 
+        # Database already initialized by fixture, so skip initialization
+        monkeypatch.setattr(database, "_db_initialized", True)
+
         # Simulate a database error by breaking the connection
-        def broken_connection():
+        def broken_connection(db_path=None):
             raise sqlite3.Error("Simulated database error")
 
         monkeypatch.setattr(database, "get_connection", broken_connection)
@@ -166,7 +175,7 @@ class TestAddItem:
         database.add_item("rss", "article456")
 
         # Query the timestamp
-        con = database.get_connection()
+        con = database.get_connection(str(temp_db))
         cur = con.cursor()
         cur.execute(
             "SELECT processed_at FROM processed_items WHERE source = ? AND unique_id = ?",
@@ -181,11 +190,11 @@ class TestAddItem:
     def test_add_item_ignores_duplicates(self, temp_db):
         """Test that add_item handles duplicate inserts gracefully (INSERT OR IGNORE)."""
         # Add item twice
-        database.add_item("hn", "duplicate123")
-        database.add_item("hn", "duplicate123")
+        database.add_item("hn", "duplicate123", str(temp_db))
+        database.add_item("hn", "duplicate123", str(temp_db))
 
         # Should still only exist once
-        con = database.get_connection()
+        con = database.get_connection(str(temp_db))
         cur = con.cursor()
         cur.execute(
             "SELECT COUNT(*) FROM processed_items WHERE source = ? AND unique_id = ?",
@@ -246,7 +255,7 @@ class TestDatabaseWorkflow:
         assert database.item_exists("rss", shared_id) is True
 
         # Count total items
-        con = database.get_connection()
+        con = database.get_connection(str(temp_db))
         cur = con.cursor()
         cur.execute(
             "SELECT COUNT(*) FROM processed_items WHERE unique_id = ?", (shared_id,)
@@ -263,7 +272,7 @@ class TestDatabaseWorkflow:
             database.add_item("hn", f"item_{i}")
 
         # Verify count
-        con = database.get_connection()
+        con = database.get_connection(str(temp_db))
         cur = con.cursor()
         cur.execute("SELECT COUNT(*) FROM processed_items WHERE source = ?", ("hn",))
         count = cur.fetchone()[0]
@@ -281,7 +290,7 @@ class TestGetConnection:
 
     def test_get_connection_returns_connection(self, temp_db):
         """Test that get_connection returns a valid SQLite connection."""
-        con = database.get_connection()
+        con = database.get_connection(str(temp_db))
 
         assert isinstance(con, sqlite3.Connection)
 
@@ -292,3 +301,92 @@ class TestGetConnection:
         con.close()
 
         assert result[0] == 1
+
+
+@pytest.mark.unit
+@pytest.mark.database
+class TestDatetimeHandling:
+    """Tests for Python 3.12+ compatible datetime handling."""
+
+    def test_get_current_timestamp_returns_iso_format(self):
+        """Test that _get_current_timestamp returns ISO 8601 format."""
+        timestamp = database._get_current_timestamp()
+
+        # Should be a string
+        assert isinstance(timestamp, str)
+
+        # Should be parseable as ISO format datetime
+        from datetime import datetime
+        parsed = datetime.fromisoformat(timestamp)
+        assert isinstance(parsed, datetime)
+
+        # Should contain timezone info (UTC)
+        assert parsed.tzinfo is not None
+
+    def test_add_item_stores_timestamp_as_text(self, temp_db):
+        """Test that timestamps are stored as TEXT in ISO format (Python 3.12+)."""
+        # Add an item
+        database.add_item("test_source", "test_id_123", str(temp_db))
+
+        # Query the database directly
+        con = sqlite3.connect(str(temp_db))
+        cur = con.cursor()
+        cur.execute(
+            "SELECT processed_at FROM processed_items WHERE source = ? AND unique_id = ?",
+            ("test_source", "test_id_123"),
+        )
+        result = cur.fetchone()
+        con.close()
+
+        assert result is not None
+        timestamp = result[0]
+
+        # Should be a string (TEXT type in SQLite)
+        assert isinstance(timestamp, str)
+
+        # Should be parseable as ISO format
+        from datetime import datetime
+        parsed = datetime.fromisoformat(timestamp)
+        assert isinstance(parsed, datetime)
+
+    def test_timestamp_column_type_is_text(self, temp_db):
+        """Test that processed_at column is TEXT type (not DATETIME)."""
+        con = sqlite3.connect(str(temp_db))
+        cur = con.cursor()
+
+        # Get table schema
+        cur.execute("PRAGMA table_info(processed_items)")
+        columns = cur.fetchall()
+        con.close()
+
+        # Find processed_at column
+        processed_at_col = [col for col in columns if col[1] == "processed_at"]
+        assert len(processed_at_col) == 1
+
+        # Column type should be TEXT (Python 3.12+ compatible)
+        col_type = processed_at_col[0][2]
+        assert col_type == "TEXT", f"Expected TEXT, got {col_type}"
+
+    def test_no_datetime_deprecation_warning(self, temp_db):
+        """Test that no DeprecationWarning is raised for datetime adapter."""
+        import warnings
+
+        # Catch all warnings
+        with warnings.catch_warnings(record=True) as warning_list:
+            warnings.simplefilter("always", DeprecationWarning)
+
+            # Perform database operations
+            database.add_item("test", "id1", str(temp_db))
+            database.item_exists("test", "id1", str(temp_db))
+
+            # Check that no datetime adapter deprecation warnings were raised
+            datetime_warnings = [
+                w for w in warning_list
+                if issubclass(w.category, DeprecationWarning)
+                and "datetime adapter" in str(w.message).lower()
+            ]
+
+            assert len(datetime_warnings) == 0, (
+                f"Found {len(datetime_warnings)} datetime deprecation warnings: "
+                f"{[str(w.message) for w in datetime_warnings]}"
+            )

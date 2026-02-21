@@ -148,86 +148,130 @@ processing:
 (This section remains the same)
 
 
----
+# Automation Guide
 
-## 🤖 Automation Options
+This guide provides detailed instructions for automating the Research Digest Toolkit.
 
-### Option 1: Weekly Cron Job (Recommended)
+## Built-in Scheduler
 
-Run every Monday morning at 9 AM:
+The easiest way to automate the toolkit is to use the built-in scheduler. The `--schedule` flag allows you to run the digest on a regular interval.
 
+### Examples
+
+*   Run every 4 hours:
+    ```bash
+    ./research_digest.py --schedule "every(4).hours"
+    ```
+*   Run every day at 10:30 AM:
+    ```bash
+    ./research_digest.py --schedule "every().day.at('10:30')"
+    ```
+*   Run every Monday at 9 AM:
+    ```bash
+    ./research_digest.py --schedule "every().monday.at('09:00')"
+    ```
+
+The schedule is parsed using the `schedule` library. For more information on the available scheduling options, please refer to the [schedule library documentation](https://schedule.readthedocs.io/).
+
+## Cron Jobs (Linux/macOS)
+
+For more advanced scheduling needs, you can use a cron job.
+
+### 1. Open Crontab
+
+Open your user's crontab for editing:
 ```bash
-# Edit crontab
 crontab -e
-
-# Add this line:
-0 9 * * 1 cd /home/doug/Documents/AIProjectWork/Scripts && ./research_digest.py >> logs/digest.log 2>&1
 ```
 
-**Create logs directory:**
+### 2. Add a Cron Job
+
+Add a line to the file to define your schedule. The format is:
+`MIN HOUR DAY(MONTH) MONTH DAY(WEEK) COMMAND`
+
+**Examples:**
+
+- **Run daily at 7 AM:**
+  ```
+  0 7 * * * cd /path/to/Scripts && ./research_digest.py --run-once
+  ```
+
+- **Run every Monday at 9 AM:**
+  ```
+  0 9 * * 1 cd /path/to/Scripts && ./research_digest.py --run-once
+  ```
+
+- **Run every 4 hours:**
+  ```
+  0 */4 * * * cd /path/to/Scripts && ./research_digest.py --run-once
+  ```
+
+**Important:**
+- Replace `/path/to/Scripts` with the absolute path to your toolkit directory.
+- The `cd` command is crucial to ensure the script runs in the correct directory context.
+- Use the `--run-once` flag to ensure the script runs once and then exits.
+
+### 3. Save and Verify
+
+Save the crontab file. You can verify that your cron job is scheduled by running:
 ```bash
-mkdir -p /home/doug/Documents/AIProjectWork/Scripts/logs
+crontab -l
 ```
 
-### Option 2: Daily Digest
+## systemd Timers (Linux)
 
-Run every day at 8 AM:
+systemd timers are a more modern and robust alternative to cron on Linux systems.
 
-```bash
-0 8 * * * cd /home/doug/Documents/AIProjectWork/Scripts && ./research_digest.py -q
-```
+### 1. Create a Service File
 
-### Option 3: Monthly Deep Dive
-
-First Monday of every month:
-
-```bash
-# Edit config to set days_back: 30
-
-0 9 1-7 * 1 cd /home/doug/Documents/AIProjectWork/Scripts && ./research_digest.py
-```
-
-### Option 4: Systemd Timer (Advanced)
-
-Create `~/.config/systemd/user/research-digest.service`:
-
+Create a service file to define the command to run:
+**`/etc/systemd/system/research-digest.service`**
 ```ini
 [Unit]
-Description=Research Digest Aggregation
-After=network.target
+Description=Research Digest Service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/doug/Documents/AIProjectWork/Scripts
-ExecStart=/home/doug/Documents/AIProjectWork/Scripts/research_digest.py
-StandardOutput=journal
-StandardError=journal
+ExecStart=/path/to/Scripts/research_digest.py --run-once
+WorkingDirectory=/path/to/Scripts
+User=your_username
 ```
+- Replace `/path/to/Scripts` and `your_username`.
 
-Create `~/.config/systemd/user/research-digest.timer`:
+### 2. Create a Timer File
 
+Create a timer file to define the schedule:
+**`/etc/systemd/system/research-digest.timer`**
 ```ini
 [Unit]
-Description=Run Research Digest Weekly
+Description=Run Research Digest daily
 
 [Timer]
-OnCalendar=Mon *-*-* 09:00:00
+OnCalendar=daily
 Persistent=true
 
 [Install]
 WantedBy=timers.target
 ```
+- `OnCalendar=daily` runs the service once a day at midnight. You can use more specific times like `OnCalendar=Mon *-*-* 09:00:00`.
 
-**Enable:**
+### 3. Enable and Start the Timer
+
 ```bash
-systemctl --user enable research-digest.timer
-systemctl --user start research-digest.timer
+# Reload systemd to recognize the new files
+sudo systemctl daemon-reload
 
-# Check status
-systemctl --user list-timers
+# Enable the timer to start on boot
+sudo systemctl enable research-digest.timer
+
+# Start the timer immediately
+sudo systemctl start research-digest.timer
+
+# Check the status of the timer
+sudo systemctl status research-digest.timer
 ```
 
----
+This provides a high-level overview of the automation options. For more detailed information, please refer to the documentation for `cron` or `systemd`.
 
 ## 📋 Workflow Examples
 

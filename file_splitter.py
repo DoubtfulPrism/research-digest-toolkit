@@ -4,10 +4,14 @@
 Designed for preparing large documents for NotebookLM (400k char limit).
 """
 
-import argparse
 import os
 import sys
 from pathlib import Path
+from typing import Optional
+
+import typer
+
+app = typer.Typer(help="Split large text files into smaller chunks for NotebookLM")
 
 # Default settings
 DEFAULT_MAX_CHARS = 400000  # NotebookLM limit
@@ -373,103 +377,106 @@ def process_directory(
     )
 
 
-def main():
-    """Main entry point for CLI usage."""
-    parser = argparse.ArgumentParser(
-        description="Split large text files into smaller chunks for NotebookLM",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s                          # Process files_to_split/ directory
-  %(prog)s -i myfile.txt            # Split single file
-  %(prog)s -i docs/ -o output/     # Process directory
-  %(prog)s -i file.txt -m 200000   # Use 200k char limit
-  %(prog)s -i file.txt --lines     # Split by lines instead of words
-  %(prog)s -i docs/ -r             # Process subdirectories recursively
-  %(prog)s -i data/ --all          # Process all files (ignore extensions)
-        """,
-    )
-
-    parser.add_argument(
-        "-i", "--input", help="Input file or directory (default: files_to_split/)"
-    )
-
-    parser.add_argument(
+@app.command()
+def main(
+    input_path: Optional[str] = typer.Option(
+        None,
+        "-i",
+        "--input",
+        help=f"Input file or directory (default: {DEFAULT_INPUT_DIR})",
+    ),
+    output: str = typer.Option(
+        DEFAULT_OUTPUT_DIR,
         "-o",
         "--output",
-        default=DEFAULT_OUTPUT_DIR,
-        help=f"Output directory (default: {DEFAULT_OUTPUT_DIR})",
-    )
-
-    parser.add_argument(
+        help=f"Output directory",
+    ),
+    max_chars: int = typer.Option(
+        DEFAULT_MAX_CHARS,
         "-m",
         "--max-chars",
-        type=int,
-        default=DEFAULT_MAX_CHARS,
-        help=f"Maximum characters per chunk (default: {DEFAULT_MAX_CHARS:,})",
-    )
-
-    parser.add_argument(
+        help=f"Maximum characters per chunk",
+    ),
+    lines: bool = typer.Option(
+        False,
         "--lines",
-        action="store_true",
         help="Split by lines instead of words (preserves line structure)",
-    )
-
-    parser.add_argument(
+    ),
+    recursive: bool = typer.Option(
+        False,
         "-r",
         "--recursive",
-        action="store_true",
         help="Process subdirectories recursively",
-    )
+    ),
+    all_files: bool = typer.Option(
+        False,
+        "--all",
+        help="Process all files regardless of extension",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "-q",
+        "--quiet",
+        help="Quiet mode - minimal output",
+    ),
+):
+    """
+    Split large text files into smaller chunks for NotebookLM.
 
-    parser.add_argument(
-        "--all", action="store_true", help="Process all files regardless of extension"
-    )
+    Examples:
 
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Quiet mode - minimal output"
-    )
+      file_splitter.py                          # Process files_to_split/ directory
 
-    args = parser.parse_args()
+      file_splitter.py -i myfile.txt            # Split single file
 
+      file_splitter.py -i docs/ -o output/     # Process directory
+
+      file_splitter.py -i file.txt -m 200000   # Use 200k char limit
+
+      file_splitter.py -i file.txt --lines     # Split by lines instead of words
+
+      file_splitter.py -i docs/ -r             # Process subdirectories recursively
+
+      file_splitter.py -i data/ --all          # Process all files (ignore extensions)
+    """
     # Determine input
-    input_path = args.input if args.input else DEFAULT_INPUT_DIR
+    input_file_or_dir = input_path if input_path else DEFAULT_INPUT_DIR
 
     # Validate max_chars
-    if args.max_chars < 1000:
+    if max_chars < 1000:
         print("Error: max-chars must be at least 1000", file=sys.stderr)
-        sys.exit(1)
+        raise typer.Exit(1)
 
     # Process files
-    split_by = "lines" if args.lines else "words"
-    verbose = not args.quiet
+    split_by = "lines" if lines else "words"
+    verbose = not quiet
 
-    if os.path.isfile(input_path):
+    if os.path.isfile(input_file_or_dir):
         # Single file mode
         if verbose:
-            print(f"Processing file: {input_path}")
-            print(f"Output directory: {args.output}")
-            print(f"Max chars per chunk: {args.max_chars:,}")
+            print(f"Processing file: {input_file_or_dir}")
+            print(f"Output directory: {output}")
+            print(f"Max chars per chunk: {max_chars:,}")
             print(f"Split mode: {split_by}\n")
 
         stats = process_files(
-            [input_path], args.output, args.max_chars, split_by, not args.all, verbose
+            [input_file_or_dir], output, max_chars, split_by, not all_files, verbose
         )
     else:
         # Directory mode
         stats = process_directory(
-            input_path,
-            args.output,
-            args.max_chars,
+            input_file_or_dir,
+            output,
+            max_chars,
             split_by,
-            args.recursive,
-            not args.all,
+            recursive,
+            not all_files,
             verbose,
         )
 
     # Print summary
     if verbose and stats["total_files"] > 0:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("Summary:")
         print(f"  Total files: {stats['total_files']}")
         print(f"  Processed: {stats['processed']}")
@@ -477,8 +484,8 @@ Examples:
         if stats["failed"] > 0:
             print(f"  Failed: {stats['failed']}")
         print(f"  Chunks created: {stats['chunks_created']}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
 
 if __name__ == "__main__":
-    main()
+    app()
