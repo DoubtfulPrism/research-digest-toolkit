@@ -53,11 +53,13 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
+asyncio_mode = "auto"
 markers = [
     "unit: Unit tests for individual functions",
     "integration: Integration tests for workflows",
     "slow: Tests that take longer to run",
     "database: Tests that interact with database",
+    "tui: Tests for TUI screens and widgets",
 ]
 
 [tool.coverage.run]

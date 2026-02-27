@@ -1,0 +1,22 @@
+/* Scheduler screen styles — scoped to #scheduler-screen to prevent cascade conflicts */
+
+#scheduler-screen .schedule-list {
+    height: auto;
+    margin-top: 1;
+    margin-bottom: 1;
+}
+
+#scheduler-screen .schedule-item {
+    color: $text;
+    padding-left: 2;
+    margin-bottom: 1;
+}
+
+#scheduler-screen .schedule-actions {
+    height: auto;
+    margin-top: 1;
+}
+
+#scheduler-screen .schedule-actions Button {
+    margin-right: 1;
+}
