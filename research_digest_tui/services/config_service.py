@@ -47,26 +47,55 @@ def _build_config_summary(key: str, scraper_config) -> str:
 class ConfigService:
     """Loads research_config.yaml and provides typed access to configuration."""
 
-    def __init__(self, config_path: Path) -> None:
-        self._config_path = config_path
+    def __init__(self, config_path: Path = Path("research_config.yaml")) -> None:
+        self._config_path = Path(config_path)
         self._config: ResearchDigestConfig | None = None
 
-    def get_config(self) -> ResearchDigestConfig:
+    @property
+    def config(self) -> ResearchDigestConfig:
         """Return the validated config, loading it if needed."""
         if self._config is None:
             self._config = self._load()
         return self._config
 
+    def get_config(self) -> ResearchDigestConfig:
+        """Return the validated config (alias for .config property)."""
+        return self.config
+
     def _load(self) -> ResearchDigestConfig:
         """Load and validate the YAML config file."""
         if not self._config_path.exists():
-            return ResearchDigestConfig()
+            cfg = ResearchDigestConfig()
+            cfg.config_path = str(self._config_path)
+            return cfg
         try:
             with open(self._config_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f) or {}
-            return ResearchDigestConfig(**data)
+            cfg = ResearchDigestConfig(**data)
+            cfg.config_path = str(self._config_path)
+            return cfg
         except Exception:
-            return ResearchDigestConfig()
+            cfg = ResearchDigestConfig()
+            cfg.config_path = str(self._config_path)
+            return cfg
+
+    def reload(self) -> None:
+        """Reload the config from disk (invalidates cache)."""
+        self._config = None
+
+    def get_scraper_names(self) -> list:
+        """Return names of all enabled scrapers."""
+        result = []
+        scrapers = self.config.scrapers
+        for key in ("hackernews", "rss", "reddit", "arxiv"):
+            scraper_cfg = getattr(scrapers, key, None)
+            if scraper_cfg is not None and getattr(scraper_cfg, "enabled", False):
+                result.append(key)
+        return result
+
+    def get_scraper_config(self, name: str):
+        """Return the typed config for a specific scraper, or None if unknown."""
+        return getattr(self.config.scrapers, name, None)
 
     def get_scraper_configs(self) -> list[dict]:
         """Return list of scraper info dicts with name, enabled, config_summary."""
