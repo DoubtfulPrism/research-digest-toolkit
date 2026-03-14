@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """ArXiv Scraper Plugin for the Research Digest Toolkit."""
 
-import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 import database
 import utils
@@ -94,10 +93,19 @@ class ArxivScraper(ScraperBase):
             print_info(f"Searching for: '{query}'", self.verbose)
 
             try:
+
                 @retry(
                     stop=stop_after_attempt(3),
                     wait=wait_exponential(multiplier=1, min=1, max=10),
-                    retry=retry_if_exception(lambda e: isinstance(e, (arxiv.arxiv.UnexpectedEmptyPageError, arxiv.arxiv.HTTPError))),
+                    retry=retry_if_exception(
+                        lambda e: isinstance(
+                            e,
+                            (
+                                arxiv.arxiv.UnexpectedEmptyPageError,
+                                arxiv.arxiv.HTTPError,
+                            ),
+                        )
+                    ),
                     reraise=True,
                 )
                 def _search_arxiv():
@@ -116,7 +124,9 @@ class ArxivScraper(ScraperBase):
 
                     if paper_date < cutoff_date:
                         # Since results are sorted by date, we can stop once we hit old papers
-                        print_info("Reached end of time window for this query.", self.verbose)
+                        print_info(
+                            "Reached end of time window for this query.", self.verbose
+                        )
                         break
 
                     unique_id = paper.entry_id
@@ -134,9 +144,15 @@ class ArxivScraper(ScraperBase):
                     filepath = output_dir / self.name.lower() / filename
 
                     utils.save_document(filepath, content, self.verbose)
-                    database.add_item("arxiv", unique_id)
+                    database.add_item(
+                        "arxiv",
+                        unique_id,
+                        title=paper.title,
+                        url=unique_id,
+                    )
 
             except Exception as e:
-                print_error(f"Error processing ArXiv query '{query}': {e}", self.verbose)
+                print_error(
+                    f"Error processing ArXiv query '{query}': {e}", self.verbose
+                )
                 continue
-

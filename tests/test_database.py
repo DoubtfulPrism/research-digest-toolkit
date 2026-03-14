@@ -285,6 +285,143 @@ class TestDatabaseWorkflow:
 
 
 @pytest.mark.unit
+@pytest.mark.database
+class TestSchemaExtension:
+    """Tests for title/url schema extension."""
+
+    def test_processed_items_has_title_column(self, temp_db):
+        """processed_items table has a title column after migration."""
+        con = sqlite3.connect(str(temp_db))
+        cur = con.cursor()
+        cur.execute("PRAGMA table_info(processed_items)")
+        columns = {col[1] for col in cur.fetchall()}
+        con.close()
+        assert "title" in columns
+
+    def test_processed_items_has_url_column(self, temp_db):
+        """processed_items table has a url column after migration."""
+        con = sqlite3.connect(str(temp_db))
+        cur = con.cursor()
+        cur.execute("PRAGMA table_info(processed_items)")
+        columns = {col[1] for col in cur.fetchall()}
+        con.close()
+        assert "url" in columns
+
+    def test_add_item_stores_title_and_url(self, temp_db):
+        """add_item() with title/url stores them in the database."""
+        database.add_item(
+            "hn",
+            "item_with_meta",
+            title="My Article",
+            url="https://example.com/my-article",
+        )
+
+        con = sqlite3.connect(str(temp_db))
+        cur = con.cursor()
+        cur.execute(
+            "SELECT title, url FROM processed_items WHERE source = ? AND unique_id = ?",
+            ("hn", "item_with_meta"),
+        )
+        row = cur.fetchone()
+        con.close()
+
+        assert row is not None
+        assert row[0] == "My Article"
+        assert row[1] == "https://example.com/my-article"
+
+    def test_add_item_without_title_url_stores_null(self, temp_db):
+        """add_item() without title/url stores NULL — backward compatible."""
+        database.add_item("rss", "item_no_meta")
+
+        con = sqlite3.connect(str(temp_db))
+        cur = con.cursor()
+        cur.execute(
+            "SELECT title, url FROM processed_items WHERE source = ? AND unique_id = ?",
+            ("rss", "item_no_meta"),
+        )
+        row = cur.fetchone()
+        con.close()
+
+        assert row is not None
+        assert row[0] is None
+        assert row[1] is None
+
+
+@pytest.mark.unit
+@pytest.mark.database
+class TestGetItems:
+    """Tests for the get_items() function."""
+
+    def test_get_items_returns_all_items(self, temp_db):
+        """get_items() returns all items when source is None."""
+        database.add_item("hn", "item1", title="Article One")
+        database.add_item("rss", "item2", title="Article Two")
+
+        items = database.get_items(db_path=str(temp_db))
+
+        assert len(items) == 2
+
+    def test_get_items_filters_by_source(self, temp_db):
+        """get_items(source='hn') returns only HN items."""
+        database.add_item("hn", "hn_item1")
+        database.add_item("hn", "hn_item2")
+        database.add_item("rss", "rss_item1")
+
+        items = database.get_items(source="hn", db_path=str(temp_db))
+
+        assert len(items) == 2
+        assert all(item["source"] == "hn" for item in items)
+
+    def test_get_items_respects_limit(self, temp_db):
+        """get_items(limit=2) returns at most 2 items."""
+        for i in range(5):
+            database.add_item("hn", f"item_{i}")
+
+        items = database.get_items(limit=2, db_path=str(temp_db))
+
+        assert len(items) == 2
+
+    def test_get_items_includes_title_url(self, temp_db):
+        """get_items() includes title and url fields."""
+        database.add_item(
+            "hn", "item_with_meta", title="My Title", url="https://example.com"
+        )
+
+        items = database.get_items(db_path=str(temp_db))
+
+        assert len(items) == 1
+        assert items[0]["title"] == "My Title"
+        assert items[0]["url"] == "https://example.com"
+
+    def test_get_items_returns_empty_list_when_db_empty(self, temp_db):
+        """get_items() returns empty list when database is empty."""
+        items = database.get_items(db_path=str(temp_db))
+        assert items == []
+
+
+@pytest.mark.unit
+@pytest.mark.database
+class TestGetItemCounts:
+    """Tests for get_item_counts() function."""
+
+    def test_get_item_counts_returns_counts_per_source(self, temp_db):
+        """get_item_counts() returns correct counts per source."""
+        database.add_item("hn", "hn1")
+        database.add_item("hn", "hn2")
+        database.add_item("rss", "rss1")
+
+        counts = database.get_item_counts(db_path=str(temp_db))
+
+        assert counts.get("hn") == 2
+        assert counts.get("rss") == 1
+
+    def test_get_item_counts_returns_empty_dict_for_empty_db(self, temp_db):
+        """get_item_counts() returns empty dict when database is empty."""
+        counts = database.get_item_counts(db_path=str(temp_db))
+        assert counts == {}
+
+
+@pytest.mark.unit
 class TestGetConnection:
     """Tests for get_connection function."""
 
@@ -317,6 +454,7 @@ class TestDatetimeHandling:
 
         # Should be parseable as ISO format datetime
         from datetime import datetime
+
         parsed = datetime.fromisoformat(timestamp)
         assert isinstance(parsed, datetime)
 
@@ -346,6 +484,7 @@ class TestDatetimeHandling:
 
         # Should be parseable as ISO format
         from datetime import datetime
+
         parsed = datetime.fromisoformat(timestamp)
         assert isinstance(parsed, datetime)
 
@@ -381,7 +520,8 @@ class TestDatetimeHandling:
 
             # Check that no datetime adapter deprecation warnings were raised
             datetime_warnings = [
-                w for w in warning_list
+                w
+                for w in warning_list
                 if issubclass(w.category, DeprecationWarning)
                 and "datetime adapter" in str(w.message).lower()
             ]

@@ -13,26 +13,24 @@ Pattern established here will be replicated for other scrapers.
 """
 
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
+from unittest.mock import Mock, patch
+
 import httpx
 import pytest
-from unittest.mock import Mock, patch
-from datetime import datetime, timedelta
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config_models import RSSConfig, RSSFeed
 
-from pydantic import ValidationError
+import database
+from config_models import RSSConfig, RSSFeed
 from scrapers.rss_scraper import (
     RSSScraper,
     _fetch_feed,
     _filter_entries_by_date,
     _format_entry,
 )
-from config_models import RSSConfig
-import database
-
 
 # ============================================================================
 # FIXTURES - Reusable test data
@@ -439,7 +437,9 @@ class TestRSSScraperRun:
         """Test that scraper gracefully skips if feedparser not installed."""
         # Arrange
         scraper = RSSScraper(verbose=True)
-        config = RSSConfig(feeds=[{"url": "https://example.com/feed.xml", "name": "Test Feed"}])
+        config = RSSConfig(
+            feeds=[{"url": "https://example.com/feed.xml", "name": "Test Feed"}]
+        )
 
         # Act
         scraper.run(config, tmp_path)
@@ -492,7 +492,7 @@ class TestRSSScraperRun:
         # Track database additions
         added_items = []
 
-        def mock_add_item(source, unique_id):
+        def mock_add_item(source, unique_id, db_path=None, title=None, url=None):
             added_items.append((source, unique_id))
 
         monkeypatch.setattr(database, "add_item", mock_add_item)
@@ -501,7 +501,9 @@ class TestRSSScraperRun:
         scraper.run(config, tmp_path)
 
         # Assert
-        mock_fetch.assert_called_once_with(scraper.client, "https://example.com/feed.xml")
+        mock_fetch.assert_called_once_with(
+            scraper.client, "https://example.com/feed.xml"
+        )
 
         # Check files were created
         rss_dir = tmp_path / "rss"
@@ -538,7 +540,7 @@ class TestRSSScraperRun:
 
         added_items = []
 
-        def mock_add_item(source, unique_id):
+        def mock_add_item(source, unique_id, db_path=None, title=None, url=None):
             added_items.append((source, unique_id))
 
         monkeypatch.setattr(database, "add_item", mock_add_item)
@@ -661,7 +663,7 @@ class TestRSSScraperRun:
         config = RSSConfig(
             enabled=True,
             feeds=[RSSFeed(url="https://example.com/feed.xml")],
-            days_back=7
+            days_back=7,
         )
 
         monkeypatch.setattr(database, "item_exists", lambda s, i: False)
@@ -698,7 +700,7 @@ class TestRSSScraperRun:
         config = RSSConfig(
             enabled=True,
             feeds=[RSSFeed(url="https://example.com/feed.xml")],
-            days_back=7
+            days_back=7,
         )
 
         monkeypatch.setattr(database, "item_exists", lambda s, i: False)
@@ -724,14 +726,11 @@ class TestRSSScraperEdgeCases:
 
     def test_run_with_feed_missing_url(self, tmp_path):
         """Test that RSSFeed validation fails without URL."""
-        # Arrange
-        scraper = RSSScraper(verbose=False)
-
         # Act & Assert - Pydantic should raise ValidationError for missing URL
         with pytest.raises(Exception):  # Could be ValidationError or TypeError
-            config = RSSConfig(
+            RSSConfig(
                 enabled=True,
-                feeds=[RSSFeed(name="Feed without URL", tags=["test"])]  # Missing URL
+                feeds=[RSSFeed(name="Feed without URL", tags=["test"])],  # Missing URL
             )
 
     def test_filter_entries_with_empty_list(self):

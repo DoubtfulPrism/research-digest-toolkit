@@ -2,12 +2,11 @@
 """RSS Scraper Plugin for the Research Digest Toolkit."""
 
 import re
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 import database
 import utils
@@ -30,7 +29,9 @@ from .base import ScraperBase
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    retry=retry_if_exception(
+        lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))
+    ),
     reraise=True,
 )
 def _fetch_feed(client: httpx.Client, feed_url: str, timeout: int = 10) -> dict:
@@ -46,7 +47,6 @@ def _fetch_feed(client: httpx.Client, feed_url: str, timeout: int = 10) -> dict:
     if feed.bozo and not (hasattr(feed, "entries") and feed.entries):
         raise ValueError(f"Failed to parse feed: {feed_url}")
     return feed
-
 
 
 def _filter_entries_by_date(entries: list, days_back: int) -> list:
@@ -126,7 +126,9 @@ class RSSScraper(ScraperBase):
             output_dir: The base directory Path object for raw output.
         """
         if not FEEDPARSER_AVAILABLE:
-            print_warning("Skipping RSS scraper: 'feedparser' not installed.", self.verbose)
+            print_warning(
+                "Skipping RSS scraper: 'feedparser' not installed.", self.verbose
+            )
             return
 
         print_section("📰 Scraping RSS Feeds", self.verbose)
@@ -170,7 +172,7 @@ class RSSScraper(ScraperBase):
                     filepath = output_dir / self.name.lower() / filename
 
                     utils.save_document(filepath, content, self.verbose)
-                    database.add_item("rss", link)
+                    database.add_item("rss", link, title=title, url=link)
 
             except Exception as e:
                 print_error(f"Error processing feed {url}: {e}", self.verbose)

@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Reddit Scraper Plugin for the Research Digest Toolkit."""
 
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
 
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 import database
 import utils
@@ -23,10 +22,14 @@ from .base import ScraperBase
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    retry=retry_if_exception(
+        lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))
+    ),
     reraise=True,
 )
-def _fetch_subreddit(client: httpx.Client, subreddit: str, time_filter: str, limit: int) -> list:
+def _fetch_subreddit(
+    client: httpx.Client, subreddit: str, time_filter: str, limit: int
+) -> list:
     """Fetches posts from a subreddit's JSON API."""
     url = f"https://www.reddit.com/r/{subreddit}/top.json"
     params = {"limit": limit, "t": time_filter}
@@ -41,10 +44,14 @@ def _fetch_subreddit(client: httpx.Client, subreddit: str, time_filter: str, lim
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    retry=retry_if_exception(
+        lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))
+    ),
     reraise=True,
 )
-def _fetch_comments(client: httpx.Client, post_id: str, subreddit: str, limit: int) -> list:
+def _fetch_comments(
+    client: httpx.Client, post_id: str, subreddit: str, limit: int
+) -> list:
     """Fetches comments for a given post."""
     url = f"https://www.reddit.com/r/{subreddit}/comments/{post_id}.json"
     params = {"limit": limit, "depth": 3}
@@ -57,7 +64,6 @@ def _fetch_comments(client: httpx.Client, post_id: str, subreddit: str, limit: i
     if len(data) > 1 and "data" in data[1] and "children" in data[1]["data"]:
         return _extract_comments_recursive(data[1]["data"]["children"])
     return []
-
 
 
 def _extract_comments_recursive(children: list, depth: int = 0) -> list:
@@ -160,7 +166,9 @@ class RedditScraper(ScraperBase):
             if not subreddit:
                 continue
 
-            print_info(f"Fetching r/{subreddit} (min {min_upvotes} upvotes)", self.verbose)
+            print_info(
+                f"Fetching r/{subreddit} (min {min_upvotes} upvotes)", self.verbose
+            )
 
             try:
                 posts = _fetch_subreddit(self.client, subreddit, time_filter, limit=50)
@@ -182,7 +190,9 @@ class RedditScraper(ScraperBase):
                         self.verbose,
                     )
 
-                    comments = _fetch_comments(self.client, post_id, subreddit, limit=50)
+                    comments = _fetch_comments(
+                        self.client, post_id, subreddit, limit=50
+                    )
                     comments.sort(key=lambda c: c["score"], reverse=True)
 
                     content = _format_post(post, comments, tags)
@@ -192,9 +202,16 @@ class RedditScraper(ScraperBase):
                     filepath = output_dir / self.name.lower() / filename
 
                     utils.save_document(filepath, content, self.verbose)
-                    database.add_item("reddit", post_id)
+                    database.add_item(
+                        "reddit",
+                        post_id,
+                        title=post.get("title"),
+                        url=f"https://www.reddit.com{post.get('permalink', '')}",
+                    )
                     time.sleep(1)  # Rate limit to be polite
 
             except Exception as e:
-                print_error(f"Error processing subreddit r/{subreddit}: {e}", self.verbose)
+                print_error(
+                    f"Error processing subreddit r/{subreddit}: {e}", self.verbose
+                )
                 continue

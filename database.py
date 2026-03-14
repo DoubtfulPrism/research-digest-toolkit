@@ -12,6 +12,7 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Dict, List, Optional
 
 # Database file will be created in the script's directory
 DB_PATH = Path(__file__).parent / "research_digest_state.db"
@@ -40,6 +41,15 @@ def get_connection(db_path: str = None):
     except sqlite3.Error as e:
         print(f"Database connection error: {e}", file=sys.stderr)
         return None
+
+
+def _migrate_schema(conn: sqlite3.Connection) -> None:
+    """Add title and url columns to processed_items if they don't exist yet."""
+    for column in ("title", "url"):
+        try:
+            conn.execute(f"ALTER TABLE processed_items ADD COLUMN {column} TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists — safe to ignore
 
 
 def init_db(db_path: str = None):
@@ -82,6 +92,7 @@ def init_db(db_path: str = None):
         return
     try:
         conn.executescript(schema)
+        _migrate_schema(conn)
     finally:
         conn.close()
 
@@ -119,13 +130,21 @@ def item_exists(source: str, unique_id: str, db_path: str = None) -> bool:
         return False  # Fail safe: assume it doesn't exist
 
 
-def add_item(source: str, unique_id: str, db_path: str = None):
+def add_item(
+    source: str,
+    unique_id: str,
+    db_path: str = None,
+    title: Optional[str] = None,
+    url: Optional[str] = None,
+) -> None:
     """Adds a new processed item to the database.
 
     Args:
         source: The source of the content (e.g., 'hn', 'rss', 'reddit').
         unique_id: The unique identifier for the item (e.g., URL or item ID).
         db_path: Optional path to database file.
+        title: Optional human-readable title for the item.
+        url: Optional canonical URL for the item.
 
     Note:
         Timestamp is stored as ISO 8601 TEXT format for Python 3.12+ compatibility.
@@ -139,16 +158,85 @@ def add_item(source: str, unique_id: str, db_path: str = None):
 
         try:
             cur = con.cursor()
-            # Use ISO format string instead of datetime object (Python 3.12+ compatible)
             cur.execute(
-                "INSERT OR IGNORE INTO processed_items (source, unique_id, processed_at) VALUES (?, ?, ?)",
-                (source, unique_id, _get_current_timestamp()),
+                "INSERT OR IGNORE INTO processed_items "
+                "(source, unique_id, processed_at, title, url) VALUES (?, ?, ?, ?, ?)",
+                (source, unique_id, _get_current_timestamp(), title, url),
             )
             con.commit()
         finally:
             con.close()
     except sqlite3.Error as e:
         print(f"Database error adding item: {e}", file=sys.stderr)
+
+
+def get_items(
+    source: Optional[str] = None,
+    limit: int = 50,
+    db_path: Optional[str] = None,
+) -> List[Dict]:
+    """Return a list of processed items, most recent first.
+
+    Args:
+        source: Filter by source name (e.g., 'hn'). None returns all sources.
+        limit: Maximum number of items to return.
+        db_path: Optional path to database file.
+
+    Returns:
+        List of dicts with keys: source, unique_id, title, url, processed_at.
+    """
+    ensure_initialized(db_path)
+
+    db = db_path or str(DB_PATH)
+    try:
+        con = sqlite3.connect(db)
+        con.row_factory = sqlite3.Row
+        try:
+            if source:
+                cur = con.execute(
+                    "SELECT source, unique_id, title, url, processed_at "
+                    "FROM processed_items WHERE source = ? "
+                    "ORDER BY processed_at DESC LIMIT ?",
+                    (source, limit),
+                )
+            else:
+                cur = con.execute(
+                    "SELECT source, unique_id, title, url, processed_at "
+                    "FROM processed_items ORDER BY processed_at DESC LIMIT ?",
+                    (limit,),
+                )
+            return [dict(row) for row in cur.fetchall()]
+        finally:
+            con.close()
+    except sqlite3.Error as e:
+        print(f"Database error fetching items: {e}", file=sys.stderr)
+        return []
+
+
+def get_item_counts(db_path: Optional[str] = None) -> Dict[str, int]:
+    """Return item count per source.
+
+    Args:
+        db_path: Optional path to database file.
+
+    Returns:
+        Dict mapping source name to item count. Empty dict if no data.
+    """
+    ensure_initialized(db_path)
+
+    db = db_path or str(DB_PATH)
+    try:
+        con = sqlite3.connect(db)
+        try:
+            cur = con.execute(
+                "SELECT source, COUNT(*) AS cnt FROM processed_items GROUP BY source"
+            )
+            return {row[0]: row[1] for row in cur.fetchall()}
+        finally:
+            con.close()
+    except sqlite3.Error as e:
+        print(f"Database error fetching counts: {e}", file=sys.stderr)
+        return {}
 
 
 # Module-level flag to track initialization

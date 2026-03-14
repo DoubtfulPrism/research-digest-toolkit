@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """HackerNews Scraper Plugin for the Research Digest Toolkit."""
 
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 import database
 import utils
@@ -37,7 +36,9 @@ class _HNClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+        retry=retry_if_exception(
+            lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))
+        ),
         reraise=True,
     )
     def get_item(self, item_id: int) -> dict:
@@ -50,7 +51,9 @@ class _HNClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+        retry=retry_if_exception(
+            lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))
+        ),
         reraise=True,
     )
     def search_stories(self, query: str, min_points: int) -> list:
@@ -65,7 +68,6 @@ class _HNClient:
         response = self.client.get(url, params=params, timeout=15)
         response.raise_for_status()
         return [hit["objectID"] for hit in response.json().get("hits", [])]
-
 
 
 # --- Helper Functions ---
@@ -193,14 +195,18 @@ class HNScraper(ScraperBase):
         for story_id in story_ids_to_process:
             try:
                 if database.item_exists("hn", str(story_id)):
-                    print_info(f"Skipping (already processed): Story {story_id}", self.verbose)
+                    print_info(
+                        f"Skipping (already processed): Story {story_id}", self.verbose
+                    )
                     continue
 
                 story = self.client.get_item(story_id)
                 if not story or story.get("descendants", 0) < min_comments:
                     continue
 
-                print_info(f"Processing story: {story.get('title', '')[:70]}", self.verbose)
+                print_info(
+                    f"Processing story: {story.get('title', '')[:70]}", self.verbose
+                )
 
                 if story.get("kids"):
                     story["comments"] = _fetch_comments_recursive(
@@ -216,7 +222,12 @@ class HNScraper(ScraperBase):
                 filepath = output_dir / self.name.lower() / filename
 
                 utils.save_document(filepath, content, self.verbose)
-                database.add_item("hn", str(story_id))
+                database.add_item(
+                    "hn",
+                    str(story_id),
+                    title=story.get("title"),
+                    url=story.get("url"),
+                )
                 time.sleep(1)  # Rate limit to be polite
 
             except Exception as e:
