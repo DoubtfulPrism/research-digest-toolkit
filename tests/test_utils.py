@@ -184,6 +184,22 @@ class TestSaveDocument:
         captured = capsys.readouterr()
         assert captured.out == ""
 
+    def test_ioerror_is_caught_and_does_not_raise(self, tmp_path):
+        from unittest.mock import mock_open, patch
+
+        filepath = tmp_path / "fail.md"
+        with patch("builtins.open", mock_open()) as m:
+            m.side_effect = IOError("disk full")
+            utils.save_document(filepath, "content", verbose=False)
+
+    def test_unexpected_exception_is_caught_and_does_not_raise(self, tmp_path):
+        from unittest.mock import mock_open, patch
+
+        filepath = tmp_path / "fail.md"
+        with patch("builtins.open", mock_open()) as m:
+            m.side_effect = RuntimeError("unexpected")
+            utils.save_document(filepath, "content", verbose=False)
+
 
 @pytest.mark.unit
 class TestCleanHTML:

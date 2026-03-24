@@ -1,5 +1,5 @@
 ---
-name: weekly-research-digest
+name: rdt-weekly-research-digest
 description: |
   Complete weekly research digest workflow for software leadership and academic research. Use when: (1) user wants to set up automated research aggregation, (2) weekly review of technical content, (3) preparing content for Obsidian or NotebookLM analysis. Covers running digest, reviewing results, Obsidian integration, and NotebookLM upload.
 author: Claude Code
@@ -307,7 +307,7 @@ chmod +x weekly_digest.sh
 
 ## References
 
-- **Project overview:** `.claude/rules/project.md`
-- **YAML config:** `.claude/rules/yaml-config.md`
+- **Project overview:** `.claude/rules/rdt-project.md`
+- **YAML config:** `.claude/rules/rdt-yaml-config.md`
 - **Automation guide:** `AUTOMATION_GUIDE.md`
 - **Thread reader guide:** `THREAD_READER_GUIDE.md`

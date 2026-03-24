@@ -3,11 +3,11 @@
 Initialize the database with topics and keywords from the config file.
 """
 
-import yaml
 import sqlite3
 from pathlib import Path
 
 import typer
+import yaml
 from rich.console import Console
 
 from database import init_db
@@ -38,10 +38,14 @@ def init_topics_and_keywords(config_file: str, db_path: str):
 
         for topic_name, keywords in topics.items():
             try:
-                cursor.execute("INSERT OR IGNORE INTO topics (name) VALUES (?)", (topic_name,))
+                cursor.execute(
+                    "INSERT OR IGNORE INTO topics (name) VALUES (?)", (topic_name,)
+                )
                 topic_id = cursor.lastrowid
                 if topic_id == 0:
-                    cursor.execute("SELECT id FROM topics WHERE name = ?", (topic_name,))
+                    cursor.execute(
+                        "SELECT id FROM topics WHERE name = ?", (topic_name,)
+                    )
                     topic_id = cursor.fetchone()[0]
 
                 for keyword in keywords:
@@ -49,9 +53,13 @@ def init_topics_and_keywords(config_file: str, db_path: str):
                         "INSERT OR IGNORE INTO keywords (topic_id, keyword) VALUES (?, ?)",
                         (topic_id, keyword),
                     )
-                console.print(f"Topic '{topic_name}' and its keywords have been added to the database.")
+                console.print(
+                    f"Topic '{topic_name}' and its keywords have been added to the database."
+                )
             except sqlite3.IntegrityError as e:
-                console.print(f"[error]Error inserting topic '{topic_name}': {e}[/error]")
+                console.print(
+                    f"[error]Error inserting topic '{topic_name}': {e}[/error]"
+                )
                 continue
 
         conn.commit()

@@ -179,6 +179,8 @@ def _create_test_db(db_path: Path, rows: list[tuple]) -> None:
                 source TEXT NOT NULL,
                 unique_id TEXT NOT NULL,
                 processed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                title TEXT,
+                url TEXT,
                 PRIMARY KEY (source, unique_id)
             )
         """
@@ -266,11 +268,28 @@ def test_data_service_get_items_timeline_returns_list(tmp_path):
     assert len(timeline) == 3
     # Most recent first
     assert timeline[0]["source"] == "hn"
-    # Each item has required fields
+    # Each item has required fields including title and url
     for item in timeline:
         assert "source" in item
         assert "unique_id" in item
         assert "processed_at" in item
+        assert "title" in item
+        assert "url" in item
+
+
+@pytest.mark.unit
+def test_data_service_get_items_timeline_rejects_invalid_source(tmp_path):
+    """get_items_timeline returns [] for unrecognized source_filter (SQL injection guard)."""
+    db_path = tmp_path / "test.db"
+    _create_test_db(db_path, [("hn", "url1", "2026-01-01T10:00:00")])
+
+    from research_digest_tui.services.data_service import DataService
+
+    service = DataService(db_path)
+    result = service.get_items_timeline(
+        source_filter="hn'; DROP TABLE processed_items;--"
+    )
+    assert result == []
 
 
 @pytest.mark.unit
@@ -410,3 +429,177 @@ def test_data_service_get_source_distribution_with_days_filter(tmp_path):
     service = DataService(db_path)
     distribution = service.get_source_distribution(days=7)
     assert distribution == []
+
+
+@pytest.mark.unit
+def test_data_service_get_last_run_per_source(tmp_path):
+    """get_last_run_per_source returns dict with most recent processed_at per source."""
+    db_path = tmp_path / "test.db"
+    _create_test_db(
+        db_path,
+        [
+            ("hn", "url1", "2026-01-01T10:00:00"),
+            ("hn", "url2", "2026-01-02T11:00:00"),
+            ("arxiv", "url3", "2026-01-03T12:00:00"),
+        ],
+    )
+
+    from research_digest_tui.services.data_service import DataService
+
+    service = DataService(db_path)
+    last_runs = service.get_last_run_per_source()
+
+    assert isinstance(last_runs, dict)
+    assert last_runs["hn"] == "2026-01-02T11:00:00"
+    assert last_runs["arxiv"] == "2026-01-03T12:00:00"
+
+
+@pytest.mark.unit
+def test_data_service_get_last_run_per_source_missing_db(tmp_path):
+    """get_last_run_per_source returns empty dict when database is missing."""
+    from research_digest_tui.services.data_service import DataService
+
+    service = DataService(tmp_path / "nonexistent.db")
+    assert service.get_last_run_per_source() == {}
+
+
+# ─── ConfigService Write Tests ────────────────────────────────────────────────
+
+
+def _yaml_with_comments(tmp_path: Path) -> Path:
+    """Write a YAML file with a comment for round-trip testing."""
+    text = "# my important comment\ndays_back: 7\nscrapers: {}\n"
+    p = tmp_path / "config_comments.yaml"
+    p.write_text(text)
+    return p
+
+
+@pytest.mark.unit
+def test_config_service_save_preserves_yaml_comments(tmp_path):
+    """save() preserves YAML comments when round-tripping via ruamel."""
+    pytest.importorskip("ruamel.yaml")
+    config_file = _yaml_with_comments(tmp_path)
+
+    from research_digest_tui.services.config_service import ConfigService
+
+    svc = ConfigService(config_file)
+    # Trigger a write
+    svc.set_scraper_field("hackernews", "enabled", True)
+
+    content = config_file.read_text()
+    assert "# my important comment" in content
+
+
+@pytest.mark.unit
+def test_set_scraper_enabled_writes_and_reloads(tmp_path):
+    """set_scraper_enabled persists the change and reloads the Pydantic cache."""
+    pytest.importorskip("ruamel.yaml")
+    config_data = {
+        "scrapers": {
+            "hackernews": {"enabled": False, "min_points": 50, "search_topics": []},
+            "rss": {"enabled": False, "feeds": []},
+            "reddit": {"enabled": False, "subreddits": []},
+            "arxiv": {"enabled": False, "search_queries": []},
+        },
+        "output": {},
+        "processing": {},
+        "topics": {},
+        "formats": {},
+        "report": {},
+    }
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.dump(config_data))
+
+    from research_digest_tui.services.config_service import ConfigService
+
+    svc = ConfigService(config_file)
+    assert svc.get_scraper_config("hackernews").enabled is False
+
+    svc.set_scraper_enabled("hackernews", True)
+    assert svc.get_scraper_config("hackernews").enabled is True
+
+
+@pytest.mark.unit
+def test_add_rss_feed_appends_to_yaml(tmp_path):
+    """add_rss_feed appends a new feed entry and saves to YAML."""
+    pytest.importorskip("ruamel.yaml")
+    config_data = {
+        "scrapers": {"rss": {"enabled": True, "feeds": []}},
+        "output": {},
+        "processing": {},
+        "topics": {},
+        "formats": {},
+        "report": {},
+    }
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.dump(config_data))
+
+    from research_digest_tui.services.config_service import ConfigService
+
+    svc = ConfigService(config_file)
+    svc.add_rss_feed(
+        url="https://example.com/feed.xml", name="Test Feed", tags=["tech"]
+    )
+
+    rss_cfg = svc.get_scraper_config("rss")
+    assert rss_cfg is not None
+    feeds = rss_cfg.feeds
+    assert len(feeds) == 1
+    assert str(feeds[0].url) == "https://example.com/feed.xml"
+    assert feeds[0].name == "Test Feed"
+
+
+@pytest.mark.unit
+def test_remove_rss_feed_by_index(tmp_path):
+    """remove_rss_feed removes the feed at the given index."""
+    pytest.importorskip("ruamel.yaml")
+    config_data = {
+        "scrapers": {
+            "rss": {
+                "enabled": True,
+                "feeds": [
+                    {"url": "https://feed1.example.com/"},
+                    {"url": "https://feed2.example.com/"},
+                ],
+            }
+        },
+        "output": {},
+        "processing": {},
+        "topics": {},
+        "formats": {},
+        "report": {},
+    }
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.dump(config_data))
+
+    from research_digest_tui.services.config_service import ConfigService
+
+    svc = ConfigService(config_file)
+    svc.remove_rss_feed(0)
+
+    rss_cfg = svc.get_scraper_config("rss")
+    feeds = rss_cfg.feeds
+    assert len(feeds) == 1
+    assert "feed2" in str(feeds[0].url)
+
+
+@pytest.mark.unit
+def test_reload_clears_both_raw_and_pydantic_caches(tmp_path):
+    """reload() clears _config (Pydantic) and _raw (ruamel) so next access re-reads."""
+    pytest.importorskip("ruamel.yaml")
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.dump({"days_back": 7, "scrapers": {}}))
+
+    from research_digest_tui.services.config_service import ConfigService
+
+    svc = ConfigService(config_file)
+    _ = svc.config  # populate _config
+    _ = svc._get_raw()  # populate _raw
+
+    assert svc._config is not None
+    assert svc._raw is not None
+
+    svc.reload()
+
+    assert svc._config is None
+    assert svc._raw is None

@@ -7,12 +7,12 @@ Implements proper error handling, signal handling, and follows modern Python pra
 """
 
 import re
-import signal
 import time
-from typing import Callable, Tuple, Union
+from typing import Callable, Tuple
 
 import schedule
-from rich_utils import print_error, print_info
+
+from rich_utils import print_info
 
 
 class ScheduleError(ValueError):
@@ -108,11 +108,17 @@ def parse_schedule_string(schedule_str: str) -> Tuple[str, ...]:
         return ("every_day_at", time_str)
 
     # Format: "every weekday at HH:MM"
-    weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    weekdays = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]
     for weekday in weekdays:
-        match = re.match(
-            rf"^every\s+{weekday}\s+at\s+(\d{{1,2}}:\d{{2}})$", normalized
-        )
+        match = re.match(rf"^every\s+{weekday}\s+at\s+(\d{{1,2}}:\d{{2}})$", normalized)
         if match:
             time_str = match.group(1)
             _validate_time_format(time_str)
@@ -138,7 +144,9 @@ def _validate_time_format(time_str: str) -> None:
     try:
         hours, minutes = map(int, time_str.split(":"))
         if not (0 <= hours <= 23 and 0 <= minutes <= 59):
-            raise ScheduleError(f"Invalid time: {time_str}. Hours must be 0-23, minutes 0-59.")
+            raise ScheduleError(
+                f"Invalid time: {time_str}. Hours must be 0-23, minutes 0-59."
+            )
     except ValueError:
         raise ScheduleError(f"Invalid time format: {time_str}. Expected HH:MM.")
 

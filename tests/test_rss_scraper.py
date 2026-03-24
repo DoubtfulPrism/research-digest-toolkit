@@ -760,3 +760,168 @@ class TestRSSScraperEdgeCases:
         # Assert
         assert "type: rss" in result  # Basic structure still there
         assert "Untitled" in result  # Default title
+
+
+# ============================================================================
+# AUTHENTICATED FEED TESTS
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestRSSScraperAuthFeeds:
+    """Tests for authenticated RSS feed support."""
+
+    def _make_feed_response(self):
+        """Build a minimal mock feedparser response."""
+        entry = Mock()
+        entry.title = "Auth Test Entry"
+        entry.link = "https://private.example.com/article"
+        entry.summary = "Auth content"
+
+        from datetime import datetime, timedelta
+
+        two_days_ago = datetime.now() - timedelta(days=2)
+        entry.published_parsed = two_days_ago.timetuple()[:6]
+        delattr(entry, "content")
+        delattr(entry, "author")
+
+        def mock_get(key, default=""):
+            return {
+                "title": "Auth Test Entry",
+                "link": "https://private.example.com/article",
+            }.get(key, default)
+
+        entry.get = mock_get
+
+        feed = Mock()
+        feed.bozo = False
+        feed.entries = [entry]
+        feed.feed = {"title": "Private Feed"}
+        return feed
+
+    @patch("scrapers.rss_scraper.FEEDPARSER_AVAILABLE", True)
+    @patch("scrapers.rss_scraper._fetch_feed")
+    def test_rss_scraper_skips_feed_when_credential_unavailable(
+        self, mock_fetch, tmp_path, monkeypatch
+    ):
+        """Feed with auth_type is skipped when no credential service is provided."""
+        scraper = RSSScraper(verbose=False)
+
+        config = RSSConfig(
+            feeds=[
+                RSSFeed(
+                    url="https://private.example.com/feed.xml",
+                    auth_type="bearer",
+                    password_key="mykey",
+                )
+            ],
+            days_back=7,
+        )
+
+        monkeypatch.setattr(database, "item_exists", lambda s, i: False)
+
+        # No credential_service passed → should skip with a warning
+        scraper.run(config, tmp_path, credential_service=None)
+
+        # _fetch_feed should never be called since the feed was skipped
+        mock_fetch.assert_not_called()
+
+    @patch("scrapers.rss_scraper.FEEDPARSER_AVAILABLE", True)
+    @patch("scrapers.rss_scraper._fetch_feed")
+    def test_rss_scraper_uses_basic_auth_for_basic_type(
+        self, mock_fetch, tmp_path, monkeypatch
+    ):
+        """Feed with auth_type='basic' triggers BasicAuth client creation."""
+        from credentials import CredentialService
+
+        scraper = RSSScraper(verbose=False)
+        mock_feed = self._make_feed_response()
+        mock_fetch.return_value = mock_feed
+
+        cred_svc = CredentialService("mypass get {key}")
+        monkeypatch.setattr(cred_svc, "is_available", lambda: True)
+        monkeypatch.setattr(cred_svc, "get_credential", lambda key: "s3cr3t")
+
+        config = RSSConfig(
+            feeds=[
+                RSSFeed(
+                    url="https://private.example.com/feed.xml",
+                    auth_type="basic",
+                    username="alice",
+                    password_key="mykey",
+                )
+            ],
+            days_back=7,
+        )
+        monkeypatch.setattr(database, "item_exists", lambda s, i: True)
+
+        with patch("scrapers.rss_scraper.get_sync_client") as mock_get_client:
+            mock_client = Mock()
+            mock_get_client.return_value = mock_client
+
+            scraper.run(config, tmp_path, credential_service=cred_svc)
+
+            mock_get_client.assert_called_once()
+            auth_arg = mock_get_client.call_args.kwargs.get("auth")
+            assert isinstance(auth_arg, httpx.BasicAuth)
+
+    @patch("scrapers.rss_scraper.FEEDPARSER_AVAILABLE", True)
+    @patch("scrapers.rss_scraper._fetch_feed")
+    def test_rss_scraper_uses_bearer_auth_for_bearer_type(
+        self, mock_fetch, tmp_path, monkeypatch
+    ):
+        """Feed with auth_type='bearer' triggers bearer auth client creation."""
+        from credentials import CredentialService
+
+        scraper = RSSScraper(verbose=False)
+        mock_feed = self._make_feed_response()
+        mock_fetch.return_value = mock_feed
+
+        cred_svc = CredentialService("mypass get {key}")
+        monkeypatch.setattr(cred_svc, "is_available", lambda: True)
+        monkeypatch.setattr(cred_svc, "get_credential", lambda key: "bearer_token")
+
+        config = RSSConfig(
+            feeds=[
+                RSSFeed(
+                    url="https://private.example.com/feed.xml",
+                    auth_type="bearer",
+                    password_key="mykey",
+                )
+            ],
+            days_back=7,
+        )
+        monkeypatch.setattr(database, "item_exists", lambda s, i: True)
+
+        with patch("scrapers.rss_scraper.get_sync_client") as mock_get_client:
+            mock_client = Mock()
+            mock_get_client.return_value = mock_client
+
+            scraper.run(config, tmp_path, credential_service=cred_svc)
+
+            mock_get_client.assert_called_once()
+            auth_arg = mock_get_client.call_args.kwargs.get("auth")
+            # Should be our bearer auth type (not BasicAuth)
+            assert auth_arg is not None
+            assert not isinstance(auth_arg, httpx.BasicAuth)
+
+    @patch("scrapers.rss_scraper.FEEDPARSER_AVAILABLE", True)
+    @patch("scrapers.rss_scraper._fetch_feed")
+    def test_rss_scraper_unauthenticated_feed_unchanged(
+        self, mock_fetch, tmp_path, mock_feedparser_response, monkeypatch
+    ):
+        """Feed without auth_type uses the default (cached) client unchanged."""
+        scraper = RSSScraper(verbose=False)
+        mock_fetch.return_value = mock_feedparser_response
+
+        config = RSSConfig(
+            feeds=[RSSFeed(url="https://public.example.com/feed.xml")],
+            days_back=7,
+        )
+        monkeypatch.setattr(database, "item_exists", lambda s, i: True)
+
+        with patch("scrapers.rss_scraper.get_sync_client") as mock_get_client:
+            scraper.run(config, tmp_path, credential_service=None)
+
+            # get_sync_client should NOT be called inside run() for unauthenticated feeds
+            mock_get_client.assert_not_called()

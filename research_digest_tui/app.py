@@ -14,6 +14,12 @@ from .screens import (
     Scheduler,
     ScraperManagement,
 )
+from .services import ConfigService, DataService
+from .services.runner_service import RunnerService
+from .services.scheduler_service import SchedulerService
+
+_DEFAULT_CONFIG_PATH = Path("research_config.yaml")
+_DEFAULT_DB_PATH = Path("research_digest_state.db")
 
 
 class ResearchDigestApp(App):
@@ -21,6 +27,18 @@ class ResearchDigestApp(App):
 
     TITLE = "Research Digest Toolkit"
     SUB_TITLE = "Automated Research Aggregation"
+
+    def __init__(
+        self,
+        config_path: Path | None = None,
+        db_path: Path | None = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.config_service = ConfigService(config_path or _DEFAULT_CONFIG_PATH)
+        self.data_service = DataService(db_path or _DEFAULT_DB_PATH)
+        self.runner_service = RunnerService(config_path or _DEFAULT_CONFIG_PATH)
+        self.scheduler_service = SchedulerService(self.config_service)
 
     CSS_PATH = [
         Path(__file__).parent / "app.tcss",

@@ -519,9 +519,9 @@ Auto-Tagging:
 
     # Summary
     if verbose:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Completed: {success_count}/{len(input_paths)} files processed")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
 
 if __name__ == "__main__":

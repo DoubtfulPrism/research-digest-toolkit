@@ -2,7 +2,6 @@
 """Utility functions shared across the Research Digest Toolkit."""
 
 import re
-import sys
 from pathlib import Path
 
 from rich_utils import print_error, print_success

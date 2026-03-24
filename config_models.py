@@ -53,8 +53,11 @@ class RSSFeed(BaseModel):
     url: HttpUrl
     name: Optional[str] = None
     tags: List[str] = []
+    auth_type: Optional[str] = None
+    username: Optional[str] = None
+    password_key: Optional[str] = None
 
-    def model_post_init(self, __context):
+    def model_post_init(self, __context: object) -> None:
         """Set name to URL if not provided."""
         if self.name is None:
             self.name = str(self.url)
@@ -92,12 +95,20 @@ class ArxivConfig(BaseScraperConfig):
 
 class ScrapersConfig(BaseModel):
     """Container for all scraper configurations."""
+
     model_config = {"extra": "allow"}
 
     hackernews: HNConfig = Field(default_factory=HNConfig)
     rss: RSSConfig = Field(default_factory=RSSConfig)
     reddit: RedditConfig = Field(default_factory=RedditConfig)
     arxiv: ArxivConfig = Field(default_factory=ArxivConfig)
+
+
+class ScheduleConfig(BaseModel):
+    """Configuration for scheduled runs."""
+
+    schedule_string: Optional[str] = None
+    enabled: bool = False
 
 
 class ResearchDigestConfig(BaseModel):
@@ -110,13 +121,17 @@ class ResearchDigestConfig(BaseModel):
     processing: ProcessingConfig = Field(default_factory=ProcessingConfig)
     formats: dict = {}
     report: ReportConfig = Field(default_factory=ReportConfig)
+    credential_command: Optional[str] = None
+    schedule: ScheduleConfig = Field(default_factory=ScheduleConfig)
     config_path: Optional[str] = "research_config.yaml"
 
     @validator("output")
-    def validate_output(cls, v):
+    def validate_output(cls, v: OutputConfig) -> OutputConfig:
         """Ensure the output directory is valid."""
         if v.obsidian_vault:
             path = Path(v.obsidian_vault)
             if not path.exists() or not path.is_dir():
-                raise ValueError(f"Obsidian vault path does not exist or is not a directory: {path}")
+                raise ValueError(
+                    f"Obsidian vault path does not exist or is not a directory: {path}"
+                )
         return v

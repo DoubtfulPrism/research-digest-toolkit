@@ -317,7 +317,9 @@ def main(
             output_path = output if len(video_inputs) == 1 else None
 
             if output_path or not output:
-                filepath = save_transcript(video_id, transcript, output_path, output_dir)
+                filepath = save_transcript(
+                    video_id, transcript, output_path, output_dir
+                )
                 print(f"  ✓ Saved to: {filepath}")
                 success_count += 1
             else:

@@ -263,7 +263,7 @@ See [AUTOMATION_GUIDE.md](AUTOMATION_GUIDE.md) for detailed configuration option
 
 ### Automated Testing
 
-The project has comprehensive automated tests with **86 tests** and **89%+ coverage** on core modules.
+The project has comprehensive automated tests with **388 tests** and **80%+ overall coverage**.
 
 **Run tests:**
 ```bash
@@ -278,10 +278,10 @@ pytest tests/ -m "not slow"
 ```
 
 **Test coverage:**
-- `database.py` - 89% (deduplication logic)
-- `utils.py` - 83% (filename generation, HTML cleaning)
-- `scrapers/base.py` - 100% (plugin architecture)
-- 86 total tests across 4 test modules
+- Overall: **80%+** across all modules
+- `scrapers/base.py`, `utils.py`, `retry_utils.py`, `rich_utils.py` - 100%
+- TUI screens (dashboard, history, scheduler, scraper_management) - 96–99%
+- 388 total tests across 23 test modules
 
 See [tests/README.md](tests/README.md) for detailed testing documentation.
 
@@ -385,7 +385,7 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for complete details and road
 
 - **10 CLI tools** - Each with `--help` documentation
 - **3,500+ lines** of production code
-- **86 automated tests** - 89%+ coverage on core modules
+- **388 automated tests** - 80%+ overall coverage
 - **CI/CD pipelines** - GitHub Actions for quality assurance
 - **Native tool integration** - Best quality output
 - **YAML configuration** - Easy customization
@@ -401,7 +401,7 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for complete details and road
 All tools are:
 - ✅ Fully functional
 - ✅ Documented
-- ✅ Comprehensively tested (86 automated tests)
+- ✅ Comprehensively tested (388 automated tests, 80%+ coverage)
 - ✅ CI/CD enabled (GitHub Actions)
 - ✅ Error handled
 - ✅ Tested on Linux

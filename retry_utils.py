@@ -5,19 +5,16 @@ Provides retry decorators and configurations for handling transient network
 failures with exponential backoff and intelligent error handling.
 """
 
-from functools import wraps
-
 import requests
 from tenacity import (
     retry,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    before_sleep_log,
-    after_log,
 )
 
-from rich_utils import print_warning, print_info
+from rich_utils import print_warning
 
 # Standard retry configuration for HTTP requests
 # Retries: 3 attempts
@@ -98,7 +95,9 @@ def retry_with_logging(verbose=True):
             attempt = retry_state.attempt_number
             if retry_state.outcome.failed:
                 exception = retry_state.outcome.exception()
-                wait_time = retry_state.next_action.sleep if retry_state.next_action else 0
+                wait_time = (
+                    retry_state.next_action.sleep if retry_state.next_action else 0
+                )
                 print_warning(
                     f"Attempt {attempt} failed: {type(exception).__name__}: {exception}. "
                     f"Retrying in {wait_time:.1f}s...",
@@ -108,7 +107,7 @@ def retry_with_logging(verbose=True):
     return retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=should_retry_http_error,
+        retry=retry_if_exception(should_retry_http_error),
         before_sleep=log_retry_attempt,
         reraise=True,
     )
@@ -130,11 +129,16 @@ def retry_api_call(verbose=True):
             attempt = retry_state.attempt_number
             if retry_state.outcome.failed:
                 exception = retry_state.outcome.exception()
-                wait_time = retry_state.next_action.sleep if retry_state.next_action else 0
+                wait_time = (
+                    retry_state.next_action.sleep if retry_state.next_action else 0
+                )
 
                 # Special message for rate limits
                 if isinstance(exception, requests.exceptions.HTTPError):
-                    if exception.response is not None and exception.response.status_code == 429:
+                    if (
+                        exception.response is not None
+                        and exception.response.status_code == 429
+                    ):
                         print_warning(
                             f"Rate limited (attempt {attempt}). Waiting {wait_time:.1f}s before retry...",
                             verbose,
@@ -150,7 +154,7 @@ def retry_api_call(verbose=True):
     return retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=2, min=2, max=60),
-        retry=should_retry_http_error,
+        retry=retry_if_exception(should_retry_http_error),
         before_sleep=log_retry_attempt,
         reraise=True,
     )
@@ -171,6 +175,7 @@ def make_resilient_request(url, session=None, verbose=True, **kwargs):
     Raises:
         requests.exceptions.RequestException: After all retries exhausted.
     """
+
     @retry_with_logging(verbose=verbose)
     def _make_request():
         if session:
@@ -198,6 +203,7 @@ def make_resilient_api_call(url, session=None, verbose=True, **kwargs):
     Raises:
         requests.exceptions.RequestException: After all retries exhausted.
     """
+
     @retry_api_call(verbose=verbose)
     def _make_request():
         if session:

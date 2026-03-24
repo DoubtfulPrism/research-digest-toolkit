@@ -11,7 +11,7 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 import database
 import utils
 from config_models import RSSConfig
-from http_client import get_sync_client
+from http_client import get_sync_client, make_bearer_auth
 from rich_utils import print_error, print_info, print_section, print_warning
 
 try:
@@ -83,20 +83,25 @@ def _format_entry(entry: dict, feed_title: str, tags: list) -> str:
 
     content = re.sub(r"<[^>]+>", "", content)  # Basic HTML cleaning
 
+    # Escape straight quotes in YAML string values
+    safe_title = title.replace('"', "\u201c").replace('"', "\u201d")
+    safe_author = author.replace('"', "\u201c").replace('"', "\u201d")
+    safe_feed_title = feed_title.replace('"', "\u201c").replace('"', "\u201d")
+
     # Build markdown output
     md_content = f"""---
 type: rss
-title: "{title.replace('"', '“')}"
-author: "{author.replace('"', '“')}"
-source: "{feed_title.replace('"', '“')}"
+title: "{safe_title}"
+author: "{safe_author}"
+source: "{safe_feed_title}"
 published: {pub_date}
 link: {link}
-tags: [rss, {', '.join(tags) if tags else ''}]
+tags: [rss, {", ".join(tags) if tags else ""}]
 ---
 
 # {title}
 
-**Source:** {feed_title or 'RSS Feed'}
+**Source:** {feed_title or "RSS Feed"}
 **Published:** {pub_date}
 **Link:** <{link}>
 
@@ -118,12 +123,13 @@ class RSSScraper(ScraperBase):
         self.name = "RSS"
         self.client = get_sync_client()
 
-    def run(self, config: RSSConfig, output_dir: Path):
+    def run(self, config: RSSConfig, output_dir: Path, credential_service=None):
         """Processes RSS feeds based on the provided configuration.
 
         Args:
             config: The scraper-specific Pydantic configuration model.
             output_dir: The base directory Path object for raw output.
+            credential_service: Optional CredentialService for authenticated feeds.
         """
         if not FEEDPARSER_AVAILABLE:
             print_warning(
@@ -140,14 +146,45 @@ class RSSScraper(ScraperBase):
             url = str(feed_config.url)
             name = feed_config.name
             tags = feed_config.tags
+            auth_type = getattr(feed_config, "auth_type", None)
+            password_key = getattr(feed_config, "password_key", None)
+            username = getattr(feed_config, "username", None)
 
             if not url:
                 continue
 
             print_info(f"Fetching feed: {name or url}", self.verbose)
 
+            # Build per-feed client (authenticated if configured)
+            if auth_type and password_key:
+                if credential_service is None or not credential_service.is_available():
+                    print_warning(
+                        f"Skipping feed '{name or url}': no credential service configured",
+                        self.verbose,
+                    )
+                    continue
+                credential = credential_service.get_credential(password_key)
+                if credential is None:
+                    print_warning(
+                        f"Skipping feed '{name or url}': credential unavailable "
+                        f"for key '{password_key}'",
+                        self.verbose,
+                    )
+                    continue
+                if auth_type == "basic":
+                    feed_auth = httpx.BasicAuth(username or "", credential)
+                    feed_client = get_sync_client(use_cache=False, auth=feed_auth)
+                elif auth_type == "bearer":
+                    feed_client = get_sync_client(
+                        use_cache=False, auth=make_bearer_auth(credential)
+                    )
+                else:
+                    feed_client = self.client
+            else:
+                feed_client = self.client
+
             try:
-                feed = _fetch_feed(self.client, url)
+                feed = _fetch_feed(feed_client, url)
                 feed_title = name or feed.feed.get("title", "Unknown Feed")
 
                 recent_entries = _filter_entries_by_date(feed.entries, days_back)

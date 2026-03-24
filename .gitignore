@@ -65,3 +65,4 @@ http_cache/
 
 # Archive (completed planning docs)
 docs/archive/
+.worktrees/

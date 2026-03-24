@@ -61,3 +61,31 @@ def test_app_has_keyboard_bindings():
     assert "l" in binding_keys
     assert "h" in binding_keys
     assert "u" in binding_keys
+
+
+@pytest.mark.unit
+def test_app_has_config_service_and_data_service():
+    """App exposes config_service and data_service after init."""
+    from research_digest_tui.services import ConfigService, DataService
+
+    app = ResearchDigestApp()
+    assert hasattr(app, "config_service")
+    assert hasattr(app, "data_service")
+    assert isinstance(app.config_service, ConfigService)
+    assert isinstance(app.data_service, DataService)
+
+
+@pytest.mark.unit
+def test_app_accepts_custom_config_path(tmp_path):
+    """App accepts a custom config_path and passes it to ConfigService."""
+    custom_config = tmp_path / "custom.yaml"
+    app = ResearchDigestApp(config_path=custom_config)
+    assert app.config_service._config_path == custom_config
+
+
+@pytest.mark.unit
+def test_app_accepts_custom_db_path(tmp_path):
+    """App accepts a custom db_path and passes it to DataService."""
+    custom_db = tmp_path / "custom.db"
+    app = ResearchDigestApp(db_path=custom_db)
+    assert app.data_service._db_path == custom_db

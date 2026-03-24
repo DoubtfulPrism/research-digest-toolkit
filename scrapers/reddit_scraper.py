@@ -105,19 +105,19 @@ def _format_post(post: dict, comments: list, tags: list) -> str:
 type: reddit
 title: \"{title.replace('"', '"')}\"
 subreddit: {subreddit}
-author: \"{post.get('author', '[deleted]')}\"
-score: {post.get('score', 0)}
-comments: {post.get('num_comments', 0)}
-date: {datetime.fromtimestamp(post.get('created_utc', 0)).strftime('%Y-%m-%d')}
+author: \"{post.get("author", "[deleted]")}\"
+score: {post.get("score", 0)}
+comments: {post.get("num_comments", 0)}
+date: {datetime.fromtimestamp(post.get("created_utc", 0)).strftime("%Y-%m-%d")}
 url: {permalink}
-tags: [reddit, {subreddit}{', ' if tags else ''}{', '.join(tags) if tags else ''}]
+tags: [reddit, {subreddit}{", " if tags else ""}{", ".join(tags) if tags else ""}]
 ---
 
 # {title}
 
 **Subreddit:** r/{subreddit}
-**Posted by:** u/{post.get('author', '[deleted]')}
-**Score:** {post.get('score', 0)} points
+**Posted by:** u/{post.get("author", "[deleted]")}
+**Score:** {post.get("score", 0)} points
 **Link:** <{permalink}>
 """
     if post.get("selftext"):

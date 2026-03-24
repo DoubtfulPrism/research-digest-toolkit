@@ -1,22 +1,71 @@
-/* Scheduler screen styles — scoped to #scheduler-screen to prevent cascade conflicts */
+/* Scheduler screen styles */
 
-#scheduler-screen .schedule-list {
-    height: auto;
+.screen-title {
+    text-style: bold;
+    color: cyan;
+    text-align: center;
+    padding: 1;
+    margin-bottom: 1;
+}
+
+#scheduler-container {
+    padding: 1 2;
+}
+
+.section-heading {
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 1;
+}
+
+.field-label {
+    color: $text-muted;
     margin-top: 1;
     margin-bottom: 1;
 }
 
-#scheduler-screen .schedule-item {
-    color: $text;
-    padding-left: 2;
+#status-row {
+    height: auto;
     margin-bottom: 1;
 }
 
-#scheduler-screen .schedule-actions {
+#status-row Button {
+    margin-left: 2;
+}
+
+.status-enabled {
+    color: green;
+    text-style: bold;
+}
+
+.status-disabled {
+    color: $text-muted;
+}
+
+.validation-ok {
+    color: green;
+    margin-top: 1;
+}
+
+.validation-error {
+    color: red;
+    margin-top: 1;
+}
+
+#example-buttons {
     height: auto;
     margin-top: 1;
 }
 
-#scheduler-screen .schedule-actions Button {
+#example-buttons Button {
+    margin-right: 1;
+}
+
+#scheduler-actions {
+    height: auto;
+    margin-top: 2;
+}
+
+#scheduler-actions Button {
     margin-right: 1;
 }

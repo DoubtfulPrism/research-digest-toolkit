@@ -1,5 +1,5 @@
 ---
-name: add-scraper-plugin
+name: rdt-add-scraper-plugin
 description: |
   Add a new scraper plugin to the Research Digest Toolkit. Use when: (1) user wants to add a new research source (Mastodon, Google Scholar, etc.), (2) extending the toolkit with custom data sources, (3) integrating new APIs or feeds. Key steps: create scraper class inheriting from ScraperBase, add YAML config section, test integration.
 author: Claude Code
@@ -245,8 +245,8 @@ class ExampleScraper(ScraperBase):
 
 ## References
 
-- **Plugin architecture:** `.claude/rules/plugin-architecture.md`
-- **Retry pattern:** `.claude/rules/retry-resilience.md`
-- **YAML config:** `.claude/rules/yaml-config.md`
+- **Plugin architecture:** `.claude/rules/rdt-plugin-architecture.md`
+- **Retry pattern:** `.claude/rules/rdt-retry-resilience.md`
+- **YAML config:** `.claude/rules/rdt-yaml-config.md`
 - **Base class:** `scrapers/base.py`
 - **Example scrapers:** `scrapers/hn_scraper.py`, `scrapers/rss_scraper.py`

@@ -32,17 +32,17 @@ def _format_paper(paper: arxiv.Result) -> str:
 type: arxiv
 title: "{title}"
 authors: [{authors}]
-published: {paper.published.strftime('%Y-%m-%d')}
-updated: {paper.updated.strftime('%Y-%m-%d')}
+published: {paper.published.strftime("%Y-%m-%d")}
+updated: {paper.updated.strftime("%Y-%m-%d")}
 url: {paper.entry_id}
 pdf_url: {paper.pdf_url}
-tags: [arxiv, paper, {', '.join(paper.categories)}]
+tags: [arxiv, paper, {", ".join(paper.categories)}]
 ---
 
 # {title}
 
 **Authors:** {authors}
-**Published:** {paper.published.strftime('%Y-%m-%d')}
+**Published:** {paper.published.strftime("%Y-%m-%d")}
 **Primary Category:** {paper.primary_category}
 
 **Link:** <{paper.entry_id}>

@@ -6,11 +6,12 @@ Scrapes web pages and saves them as clean text files suitable for NotebookLM.
 
 import os
 import re
-import sys
 from typing import List, Optional
 
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+import typer
+from bs4 import BeautifulSoup
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from http_client import get_sync_client
 from rich_utils import (
@@ -29,7 +30,9 @@ app = typer.Typer(help="Scrape web pages and save as clean text files")
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception(lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))),
+    retry=retry_if_exception(
+        lambda e: isinstance(e, (httpx.RequestError, httpx.HTTPStatusError))
+    ),
     reraise=True,
 )
 def make_resilient_request_httpx(client: httpx.Client, url: str, **kwargs):
@@ -106,20 +109,25 @@ def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
 
         for i, url in enumerate(urls):
             try:
-                progress.update(task, description=f"[cyan]Fetching [{i+1}/{len(urls)}]: {url[:50]}...")
-                response = make_resilient_request_httpx(client, url, timeout=10, headers=headers)
+                progress.update(
+                    task,
+                    description=f"[cyan]Fetching [{i + 1}/{len(urls)}]: {url[:50]}...",
+                )
+                response = make_resilient_request_httpx(
+                    client, url, timeout=10, headers=headers
+                )
 
                 clean_text = clean_html_content(response.content)
 
                 # Extract page title for filename
                 title_soup = BeautifulSoup(response.content, "html.parser")
                 page_title = (
-                    title_soup.title.string if title_soup.title else f"article_{i+1}"
+                    title_soup.title.string if title_soup.title else f"article_{i + 1}"
                 )
 
                 # Sanitize filename (cross-platform safe)
                 filename_base = re.sub(r'[\\/:*?"<>|]', "_", page_title).strip()
-                filename = f"{filename_base[:50].strip() or f'article_{i+1}'}.txt"
+                filename = f"{filename_base[:50].strip() or f'article_{i + 1}'}.txt"
 
                 output_path = os.path.join(output_dir, filename)
 
@@ -143,7 +151,11 @@ def scrape_and_save(urls, output_dir="notebooklm_sources_web"):
     table = create_summary_table("Scraping Results", ["Metric", "Value"])
     table.add_row("Total URLs", str(len(urls)))
     table.add_row("Successful", str(success_count), style="green")
-    table.add_row("Failed", str(len(urls) - success_count), style="red" if len(urls) - success_count > 0 else "")
+    table.add_row(
+        "Failed",
+        str(len(urls) - success_count),
+        style="red" if len(urls) - success_count > 0 else "",
+    )
 
     console.print("\n")
     console.print(table)

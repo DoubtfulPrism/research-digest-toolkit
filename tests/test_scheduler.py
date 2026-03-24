@@ -12,18 +12,18 @@ Testing Strategy:
 import signal
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-import time
+from unittest.mock import Mock, patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from scheduler_utils import (
-    parse_schedule_string,
-    setup_schedule,
     ScheduleError,
     SignalHandler,
+    _validate_time_format,
+    parse_schedule_string,
+    setup_schedule,
 )
 
 
@@ -109,7 +109,9 @@ class TestSetupSchedule:
         """Test setting up 'every day at HH:MM' schedule."""
         job_func = Mock()
         mock_job = Mock()
-        mock_schedule.every.return_value.day.at.return_value.do = Mock(return_value=mock_job)
+        mock_schedule.every.return_value.day.at.return_value.do = Mock(
+            return_value=mock_job
+        )
 
         setup_schedule("every day at 10:30", job_func)
 
@@ -120,7 +122,9 @@ class TestSetupSchedule:
         """Test setting up weekday-specific schedule."""
         job_func = Mock()
         mock_job = Mock()
-        mock_schedule.every.return_value.monday.at.return_value.do = Mock(return_value=mock_job)
+        mock_schedule.every.return_value.monday.at.return_value.do = Mock(
+            return_value=mock_job
+        )
 
         setup_schedule("every monday at 09:00", job_func)
 
@@ -130,6 +134,50 @@ class TestSetupSchedule:
         """Test that invalid schedule string raises ScheduleError."""
         with pytest.raises(ScheduleError):
             setup_schedule("invalid", Mock())
+
+    @patch("scheduler_utils.schedule")
+    def test_setup_every_hour(self, mock_schedule):
+        job_func = Mock()
+        setup_schedule("every hour", job_func)
+        mock_schedule.every.return_value.hour.do.assert_called_once_with(job_func)
+
+    @patch("scheduler_utils.schedule")
+    def test_setup_every_day(self, mock_schedule):
+        job_func = Mock()
+        setup_schedule("every day", job_func)
+        mock_schedule.every.return_value.day.do.assert_called_once_with(job_func)
+
+    @patch("scheduler_utils.schedule")
+    def test_setup_every_minute(self, mock_schedule):
+        job_func = Mock()
+        setup_schedule("every minute", job_func)
+        mock_schedule.every.return_value.minute.do.assert_called_once_with(job_func)
+
+    @patch("scheduler_utils.schedule")
+    def test_setup_every_second(self, mock_schedule):
+        job_func = Mock()
+        setup_schedule("every second", job_func)
+        mock_schedule.every.return_value.second.do.assert_called_once_with(job_func)
+
+
+@pytest.mark.unit
+class TestValidateTimeFormat:
+    """Tests for _validate_time_format."""
+
+    def test_valid_time_does_not_raise(self):
+        _validate_time_format("10:30")
+
+    def test_non_numeric_raises_schedule_error(self):
+        with pytest.raises(ScheduleError, match="Invalid time format"):
+            _validate_time_format("ab:cd")
+
+    def test_invalid_hour_raises_schedule_error(self):
+        with pytest.raises(ScheduleError, match="Invalid time"):
+            _validate_time_format("25:00")
+
+    def test_invalid_minute_raises_schedule_error(self):
+        with pytest.raises(ScheduleError, match="Invalid time"):
+            _validate_time_format("10:60")
 
 
 @pytest.mark.unit
@@ -153,7 +201,10 @@ class TestSignalHandler:
         handler.handle_signal(signal.SIGINT, None)
 
         captured = capsys.readouterr()
-        assert "Shutting down gracefully" in captured.out or "Shutting down gracefully" in captured.err
+        assert (
+            "Shutting down gracefully" in captured.out
+            or "Shutting down gracefully" in captured.err
+        )
 
 
 @pytest.mark.integration
@@ -182,6 +233,7 @@ class TestScheduleIntegration:
 
         # Make it stop after 2 iterations
         call_count = [0]
+
         def side_effect():
             call_count[0] += 1
             if call_count[0] >= 2:

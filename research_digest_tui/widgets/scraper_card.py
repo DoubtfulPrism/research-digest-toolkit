@@ -105,22 +105,28 @@ class ScraperCard(Container):
             toggle_label = "Enable" if self.status == "disabled" else "Disable"
             yield Button(toggle_label, id=f"{self.scraper_name.lower()}-toggle")
 
-    def watch_status(self, new_status: str) -> None:  # pragma: no cover
-        """Update display when status changes. Phase 3 implementation stub.
-
-        Called by Textual only when widget is mounted in a running app.
+    def watch_status(self, new_status: str) -> None:
+        """Update header and toggle button when status changes.
 
         Args:
-            new_status: The new status value
+            new_status: The new status value ("running", "idle", "disabled")
         """
-        pass
+        if not self.is_mounted:
+            return
+        status_class = f"status-{new_status}"
+        header = self.query_one(".card-header", Static)
+        header.update(f"{self.scraper_name} - [{status_class}]{new_status.title()}[/]")
+        toggle_label = "Enable" if new_status == "disabled" else "Disable"
+        self.query_one(f"#{self.scraper_name.lower()}-toggle", Button).label = (
+            toggle_label
+        )
 
-    def watch_progress(self, new_progress: float) -> None:  # pragma: no cover
-        """Update progress bar when progress changes. Phase 3 implementation stub.
-
-        Called by Textual only when widget is mounted in a running app.
+    def watch_progress(self, new_progress: float) -> None:
+        """Update progress bar when progress changes.
 
         Args:
             new_progress: The new progress value (0.0 to 1.0)
         """
-        pass
+        if not self.is_mounted:
+            return
+        self.query_one(ProgressBar).progress = new_progress * 100

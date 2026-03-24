@@ -5,7 +5,24 @@ import pytest
 
 pytest.importorskip("textual")
 
+from textual.app import App, ComposeResult  # noqa: E402
+from textual.widgets import ProgressBar, Static  # noqa: E402
+
 from research_digest_tui.widgets import ScraperCard  # noqa: E402
+
+
+class _CardApp(App):
+    """Minimal test app that mounts a single ScraperCard."""
+
+    def __init__(self, status: str = "idle", progress: float = 0.0) -> None:
+        super().__init__()
+        self._initial_status = status
+        self._initial_progress = progress
+
+    def compose(self) -> ComposeResult:
+        yield ScraperCard(
+            "TestScraper", status=self._initial_status, progress=self._initial_progress
+        )
 
 
 @pytest.mark.unit
@@ -45,3 +62,70 @@ def test_scraper_card_with_different_statuses():
     for status in statuses:
         card = ScraperCard("ArXiv", status=status, progress=0.0, item_count=0)
         assert card.status == status
+
+
+# ─── watch_status and watch_progress (TDD) ───────────────────────────────────
+
+
+@pytest.mark.tui
+async def test_watch_status_updates_header_to_running():
+    """watch_status updates the card header text when status becomes 'running'."""
+    app = _CardApp(status="idle")
+    async with app.run_test() as pilot:
+        card = app.query_one(ScraperCard)
+        card.status = "running"
+        await pilot.pause()
+        header = card.query_one(".card-header", Static)
+        assert "Running" in str(header.renderable)
+
+
+@pytest.mark.tui
+async def test_watch_status_updates_header_to_idle():
+    """watch_status updates the card header text when status becomes 'idle'."""
+    app = _CardApp(status="running")
+    async with app.run_test() as pilot:
+        card = app.query_one(ScraperCard)
+        card.status = "idle"
+        await pilot.pause()
+        header = card.query_one(".card-header", Static)
+        assert "Idle" in str(header.renderable)
+
+
+@pytest.mark.tui
+async def test_watch_status_disabled_sets_toggle_to_enable():
+    """watch_status sets toggle button label to 'Enable' when status is 'disabled'."""
+    from textual.widgets import Button
+
+    app = _CardApp(status="idle")
+    async with app.run_test() as pilot:
+        card = app.query_one(ScraperCard)
+        card.status = "disabled"
+        await pilot.pause()
+        toggle = card.query_one("#testscraper-toggle", Button)
+        assert str(toggle.label) == "Enable"
+
+
+@pytest.mark.tui
+async def test_watch_status_running_sets_toggle_to_disable():
+    """watch_status sets toggle button label to 'Disable' when status is not 'disabled'."""
+    from textual.widgets import Button
+
+    app = _CardApp(status="disabled")
+    async with app.run_test() as pilot:
+        card = app.query_one(ScraperCard)
+        card.status = "running"
+        await pilot.pause()
+        toggle = card.query_one("#testscraper-toggle", Button)
+        assert str(toggle.label) == "Disable"
+
+
+@pytest.mark.tui
+async def test_watch_progress_updates_progress_bar():
+    """watch_progress updates the ProgressBar progress value."""
+    app = _CardApp(progress=0.0)
+    async with app.run_test() as pilot:
+        card = app.query_one(ScraperCard)
+        card.progress = 0.75
+        await pilot.pause()
+        bar = card.query_one(ProgressBar)
+        assert bar.progress == 75.0  # 0.75 * 100

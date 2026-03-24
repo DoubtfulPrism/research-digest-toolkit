@@ -389,13 +389,13 @@ def main(
         DEFAULT_OUTPUT_DIR,
         "-o",
         "--output",
-        help=f"Output directory",
+        help="Output directory",
     ),
     max_chars: int = typer.Option(
         DEFAULT_MAX_CHARS,
         "-m",
         "--max-chars",
-        help=f"Maximum characters per chunk",
+        help="Maximum characters per chunk",
     ),
     lines: bool = typer.Option(
         False,

@@ -4,28 +4,46 @@ This directory contains automated tests for the Research Digest Toolkit. The tes
 
 ## Test Statistics
 
-- **Total Tests:** 86
-- **Test Modules:** 4
-- **Coverage:** 42% overall (core modules: 89-100%)
+- **Total Tests:** 388
+- **Test Modules:** 23
+- **Coverage:** 80%+ overall
 
 ## Test Organization
 
 ### Test Modules
 
-| Module | Tests | Coverage | Description |
-|--------|-------|----------|-------------|
-| `test_database.py` | 15 | 89% | Database deduplication and state tracking |
-| `test_utils.py` | 35 | 100% | Utility functions (filename, HTML, saving) |
-| `test_scrapers.py` | 20 | 100% | Base scraper class and plugin contract |
-| `test_plugin_loading.py` | 16 | 99% | Plugin discovery and orchestration |
+| Module | Description |
+|--------|-------------|
+| `test_analysis.py` | Trend analysis with Polars/scikit-learn |
+| `test_config_service.py` | ConfigService YAML/Pydantic integration |
+| `test_credentials.py` | Credential management |
+| `test_database.py` | Database deduplication and state tracking |
+| `test_db_init.py` | Database initialization |
+| `test_file_converter.py` | Document format conversion |
+| `test_file_splitter.py` | File splitting for NotebookLM |
+| `test_http_client.py` | HTTPX + DiskCache transport (100%) |
+| `test_plugin_loading.py` | Plugin discovery and orchestration |
+| `test_retry_utils.py` | Tenacity retry decorators (100%) |
+| `test_rich_utils.py` | Rich console output helpers (100%) |
+| `test_rss_scraper.py` | RSS/Atom feed scraper |
+| `test_runner_service.py` | Scraper subprocess runner |
+| `test_scheduler.py` | Schedule library wrapper |
+| `test_scheduler_service.py` | SchedulerService configuration |
+| `test_scrapers.py` | Base scraper class and plugin contract |
+| `test_tui_integration.py` | TUI app integration (37 tests) |
+| `test_tui_screens.py` | TUI screen unit tests |
+| `test_tui_services.py` | TUI service layer tests |
+| `test_tui_widgets.py` | ScraperCard widget tests (8 tests) |
+| `test_utils.py` | Utility functions (100%) |
 
 ### Test Categories
 
 Tests are organized by pytest markers:
 
-- `@pytest.mark.unit` - Unit tests for individual functions (67 tests)
-- `@pytest.mark.integration` - Integration tests for workflows (7 tests)
-- `@pytest.mark.database` - Database-specific tests (6 tests)
+- `@pytest.mark.unit` - Unit tests for individual functions
+- `@pytest.mark.integration` - Integration tests for workflows
+- `@pytest.mark.database` - Database-specific tests
+- `@pytest.mark.tui` - TUI screen, widget, and interaction tests
 - `@pytest.mark.slow` - Long-running tests (0 currently)
 
 ## Running Tests
@@ -100,32 +118,26 @@ pytest tests/ --durations=10
 
 ## Test Coverage by Module
 
-### Core Modules (High Priority)
+### Core Modules
 
 | Module | Coverage | Notes |
 |--------|----------|-------|
-| `database.py` | 89% | Missing: Error handling edge cases |
-| `utils.py` | 83% | Missing: Error paths in save_document |
-| `scrapers/base.py` | 100% | Fully covered |
-| `research_digest.py` | 48% | Missing: CLI and processing pipelines |
-
-### Scraper Plugins (Lower Priority)
-
-| Module | Coverage | Notes |
-|--------|----------|-------|
-| `scrapers/arxiv_scraper.py` | 37% | Needs integration tests |
-| `scrapers/hn_scraper.py` | 31% | Needs integration tests |
-| `scrapers/reddit_scraper.py` | 23% | Needs integration tests |
-| `scrapers/rss_scraper.py` | 20% | Needs integration tests |
-
-### Utility Tools (Not Currently Tested)
-
-- `file_converter.py` - 0% coverage
-- `file_splitter.py` - 0% coverage
-- `obsidian_prep.py` - 0% coverage
-- `thread_reader.py` - 0% coverage
-- `web_scraper.py` - 0% coverage
-- `youtube_transcript.py` - 0% coverage
+| `utils.py`, `retry_utils.py`, `rich_utils.py` | 100% | Fully covered |
+| `http_client.py` | 100% | Sync and async cache transports |
+| `scrapers/base.py` | 100% | Plugin architecture |
+| `scheduler_utils.py` | 99% | Schedule parsing and validation |
+| `scraper_management.py` | 99% | TUI scraper management screen |
+| `scheduler.py` (TUI) | 98% | TUI scheduler screen |
+| `history.py` (TUI) | 96% | TUI history screen |
+| `analysis.py` | 96% | Trend analysis |
+| `config_models.py` | 96% | Pydantic configuration models |
+| `database.py` | 89% | Deduplication and state tracking |
+| `scrapers/reddit_scraper.py` | 88% | Reddit scraper |
+| `scrapers/hn_scraper.py` | 84% | HackerNews scraper |
+| `file_splitter.py` | 86% | File splitting for NotebookLM |
+| `scrapers/rss_scraper.py` | 94% | RSS/Atom feed scraper |
+| `research_digest.py` | 50% | CLI orchestrator (subprocess-heavy) |
+| `file_converter.py` | 47% | Document format conversion |
 
 ## Test Fixtures
 
@@ -253,6 +265,6 @@ The test suite has already found real bugs:
 
 ---
 
-**Last Updated:** 2025-12-18
+**Last Updated:** 2026-03-24
 **Test Framework:** pytest 9.0.2
-**Python Version:** 3.14.2
+**Python Version:** 3.14.3

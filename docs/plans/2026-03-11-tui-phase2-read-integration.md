@@ -1,15 +1,15 @@
 # TUI Phase 2: Read-Only Integration Implementation Plan
 
 Created: 2026-03-11
-Status: PENDING
+Status: VERIFIED
 Approved: Yes
 Iterations: 0
-Worktree: Yes
+Worktree: No
 Type: Feature
 
 ## Summary
 
-**Goal:** Replace placeholder content in TUI screens with real data from `research_config.yaml` and the SQLite database (`research_digest_state.db`). Create a service layer for data access, use Polars for analytics queries, and build a content browser (timeline view) and analytics dashboard with ASCII bar charts.
+**Goal:** Replace placeholder content in TUI screens with real data from `research_config.yaml` and the SQLite database (`research_digest_state.db`). Create a service layer for data access, use Polars for analytics queries, and build a content browser (timeline view) and text-based analytics dashboard.
 
 **Architecture:** Service classes (`ConfigService`, `DataService`) wrap config loading and Polars database queries. Services are created by the App and made accessible to screens via `self.app`. Screens read from services during `on_mount()` to populate widgets with real data.
 
@@ -26,7 +26,7 @@ Type: Feature
 - Dashboard: dynamic ScraperCards from config, real item counts and last-run times
 - Scraper Management: real config values, real item counts per scraper
 - Logs screen → Content Browser: timeline of all processed items from database, source filters
-- History/Analytics: summary stats, source distribution bar charts, daily trends, time range filters
+- History/Analytics: summary stats, source distribution text tables, daily trends, time range filters
 - Unit tests for services, updated screen tests, integration tests
 
 ### Out of Scope
@@ -56,14 +56,18 @@ Type: Feature
   - Tests: `pytest.importorskip("textual")` at top of TUI test files, `@pytest.mark.unit` / `@pytest.mark.tui` markers
 
 - **Key files:**
-  - `database.py` — SQLite schema: `processed_items(source, unique_id, processed_at)`, `topics`, `keywords`, `topic_occurrences`
+  - `database.py` — SQLite schema: `processed_items(source, unique_id, processed_at, title, url)`, `topics`, `keywords`, `topic_occurrences`. Includes `get_items()`, `get_item_counts()`.
   - `config_models.py` — Pydantic models: `ResearchDigestConfig`, `ScrapersConfig`, `HNConfig`, `RSSConfig`, `RedditConfig`, `ArxivConfig`
   - `research_config.yaml` — YAML config with scrapers, topics, processing, output sections
-  - `research_digest_state.db` — live database with 562 items (204 arxiv, 193 hn, 159 reddit, 6 rss)
+  - `research_digest_state.db` — live database with scraped items across 4 sources
   - `research_digest.py:258-263` — current TUI launch point (creates `ResearchDigestApp()` with no args)
+  - `research_digest_tui/services/config_service.py` — ConfigService (Task 1: COMPLETE)
+  - `research_digest_tui/services/data_service.py` — DataService with Polars queries (Task 2: COMPLETE)
+  - `tests/test_config_service.py` — ConfigService unit tests (Task 1: COMPLETE)
+  - `tests/test_tui_services.py` — DataService unit tests (Task 2: COMPLETE)
 
 - **Gotchas:**
-  - Database `processed_items` has `source`, `unique_id`, `processed_at` — no title column. `unique_id` is typically a URL or item ID.
+  - Database `processed_items` has `source`, `unique_id`, `processed_at`, `title`, `url` columns. Schema migration in `database._migrate_schema()` adds title/url to existing databases.
   - `analysis.py` uses `pl.read_database(query, conn)` where `conn` is a `sqlite3.Connection` — Polars reads directly from SQLite connections. **Note:** `analysis.py` uses `with get_connection() as conn:` which manages transactions, NOT connection close. DataService should use try/finally with explicit `conn.close()`.
   - The `topics` and `topic_occurrences` tables are currently empty (0 rows) — handle gracefully.
   - ScraperCard widget uses `scraper_name` (not `name`) to avoid conflict with Textual's `Widget.name`.
@@ -101,7 +105,7 @@ Type: Feature
 
 1. **Service injection pattern doesn't work with Textual's screen lifecycle** (Task 3) → Trigger: screens can't access `self.app.config_service` during `compose()` because app isn't mounted yet. Resolution: load data in `on_mount()` instead of `compose()`, use reactive properties to trigger re-renders.
 2. **Polars queries block the TUI event loop** (Tasks 6, 7) → Trigger: TUI freezes for >200ms when switching to History or Content Browser screens with large datasets. Resolution: use Textual's `@work(thread=True)` decorator for queries, show loading indicator.
-3. **ASCII bar chart rendering breaks with edge cases** (Task 7) → Trigger: zero-count sources, very long source names, or 0 total items cause division by zero or layout overflow. Resolution: guard all divisions, cap bar width, truncate labels.
+3. **Text table rendering breaks with edge cases** (Task 7) → Trigger: zero-count sources, very long source names, or 0 total items cause division by zero. Resolution: guard all divisions, cap label width, handle empty data gracefully.
 
 ## Goal Verification
 
@@ -110,7 +114,7 @@ Type: Feature
 1. Dashboard shows real scraper names, enabled/disabled status, and item counts from the database
 2. Scraper Management shows actual config values (topics, feeds, subreddits) from research_config.yaml
 3. Content Browser (Logs screen) shows a scrollable timeline of all processed items with source filtering
-4. History/Analytics shows total items, items per source, daily counts, and ASCII bar charts
+4. History/Analytics shows total items, items per source, daily counts in text-based tables
 5. Time range filters on History screen change the displayed data
 6. Source filter buttons on Content Browser screen filter the displayed items
 7. All screens handle empty database gracefully (show "No data" messages)
@@ -135,15 +139,15 @@ Type: Feature
 
 ## Progress Tracking
 
-- [ ] Task 1: ConfigService — config loading and scraper config access
-- [ ] Task 2: DataService — Polars database queries
-- [ ] Task 3: Wire services into App and screens
-- [ ] Task 4: Dashboard with real data
-- [ ] Task 5: Scraper Management with real config
-- [ ] Task 6: Content Browser (Logs screen) with timeline view
-- [ ] Task 7: History/Analytics with stats, charts, and summary
+- [x] Task 1: ConfigService — config loading and scraper config access
+- [x] Task 2: DataService — Polars database queries
+- [x] Task 3: Wire services into App and screens
+- [x] Task 4: Dashboard with real data
+- [x] Task 5: Scraper Management with real config
+- [x] Task 6: Content Browser (Logs screen) with timeline view
+- [x] Task 7: History/Analytics with stats and text tables
 
-**Total Tasks:** 7 | **Completed:** 0 | **Remaining:** 7
+**Total Tasks:** 7 | **Completed:** 7 | **Remaining:** 0
 
 ## Implementation Tasks
 
@@ -229,6 +233,7 @@ Type: Feature
 
 **Key Decisions / Notes:**
 - `ResearchDigestApp.__init__` accepts optional `config_path: Path | None = None` and `db_path: Path | None = None`
+- **Must pass `**kwargs` to `super().__init__()`** — Textual's `App.__init__` expects keyword args for CSS/watch initialization: `def __init__(self, config_path=None, db_path=None, **kwargs): super().__init__(**kwargs)`
 - Defaults: `config_path` = `Path("research_config.yaml")`, `db_path` = `Path("research_digest_state.db")`
 - Services created in `__init__`: `self.config_service = ConfigService(config_path)` and `self.data_service = DataService(db_path)`
 - Screens access via `self.app.config_service` and `self.app.data_service`
@@ -240,7 +245,8 @@ Type: Feature
 - [ ] `research_digest.py` passes config_path to App
 - [ ] Existing tests still pass with default parameters
 - [ ] Screens can access `self.app.config_service` and `self.app.data_service`
-- [ ] Verify `python research_digest.py --tui` still starts without error (manual check)
+- [ ] Test: `ResearchDigestApp()` with no args still works (has config_service and data_service)
+- [ ] Test: `ResearchDigestApp(config_path=path)` instantiates correctly
 - [ ] All tests pass
 
 **Verify:**
@@ -283,25 +289,29 @@ Type: Feature
 
 ### Task 5: Scraper Management with Real Config
 
-**Objective:** Replace hardcoded scraper details with actual config values and database statistics.
+**Objective:** Replace hardcoded scraper details with actual config values and database statistics. Also extend DataService with `get_last_run_per_source()`.
 
 **Dependencies:** Task 3
 
 **Files:**
+- Modify: `research_digest_tui/services/data_service.py` (add `get_last_run_per_source()`)
 - Modify: `research_digest_tui/screens/scraper_management.py`
+- Modify: `tests/test_tui_services.py` (add test for `get_last_run_per_source()`)
 - Modify: `tests/test_tui_integration.py` (add scraper management tests)
 
 **Key Decisions / Notes:**
+- **Add `get_last_run_per_source() -> dict[str, str]` to DataService:** runs `SELECT source, MAX(processed_at) AS last_run FROM processed_items GROUP BY source` and returns `{source: iso_date_string}`. Returns `{}` for empty/missing DB.
 - In `on_mount()`, read config service for scraper settings
 - Display real values: topics, feeds, subreddits, search queries per scraper
-- Show item count per scraper from data service
-- Show last processed date per scraper (MAX(processed_at) from database)
+- Show item count per scraper from `data_service.get_item_counts_by_source()`
+- Show last processed date per scraper from `data_service.get_last_run_per_source()`
 - Dynamically generate scraper rows based on config (not hardcoded 4 rows)
 - Keep action buttons disabled (Phase 3: Run Now, Phase 4: Configure)
 - Show [ENABLED] or [DISABLED] badge based on config
 - **compose() creates container structure**, `on_mount()` populates with real data
 
 **Definition of Done:**
+- [ ] `DataService.get_last_run_per_source()` implemented and tested
 - [ ] Scraper rows generated from config (not hardcoded)
 - [ ] Config summary shows real values (topics, feeds, etc.)
 - [ ] Item counts and last-run dates from database
@@ -316,33 +326,36 @@ Type: Feature
 
 ### Task 6: Content Browser (Logs Screen) with Timeline View
 
-**Objective:** Transform the Logs placeholder into a content browser showing a chronological timeline of all processed items from the database, with source filtering.
+**Objective:** Transform the Logs placeholder into a content browser showing a chronological timeline of all processed items from the database, with source filtering. Also update `get_items_timeline()` to include title/url.
 
 **Dependencies:** Task 3
 
 **Files:**
+- Modify: `research_digest_tui/services/data_service.py` (update `get_items_timeline()` to select title, url)
 - Modify: `research_digest_tui/screens/logs.py`
 - Modify: `research_digest_tui/screens/logs.tcss`
+- Modify: `tests/test_tui_services.py` (update timeline tests for title/url)
 - Modify: `tests/test_tui_integration.py` (add content browser tests)
 
 **Key Decisions / Notes:**
+- **Update `get_items_timeline()` to select `source, unique_id, title, url, processed_at`** — display Title as primary column (fall back to unique_id when title is NULL for older rows)
 - Use Textual `DataTable` widget for the timeline (sortable columns, scrollable)
-- Columns: Source, Item ID/URL, Date
+- Columns: Source, Title (fallback to unique_id), Date
 - Load data in `on_mount()` via `self.app.data_service.get_items_timeline(limit=200)`
-- **Use `@work(thread=True)` for data loading** to avoid blocking the TUI event loop. Show a loading message while the worker runs, then populate the DataTable from the worker callback.
-- Source filter buttons: All, HN, RSS, Reddit, ArXiv — clicking filters the DataTable
+- Source filter buttons: All, HN, RSS, Reddit, ArXiv — clicking filters the DataTable. **Filter buttons must only pass validated source strings** from `SOURCE_NAME_MAPPING` values to prevent SQL injection.
 - Replace the filter buttons from Phase 1 (INFO/WARN/ERROR) with source filters
 - Keep screen title as "Content Browser" (update from "Logs" in the heading, but keep screen class name `Logs` and keyboard binding `l` unchanged to avoid breaking navigation)
 - Handle empty database: show "No content collected yet — run a scraper to populate"
-- Truncate long URLs in the Item ID column for display
+- Truncate long URLs/titles in columns for display
 
 **Definition of Done:**
-- [ ] DataTable shows processed items with Source, Item ID, Date columns
+- [ ] `get_items_timeline()` returns title and url columns
+- [ ] DataTable shows processed items with Source, Title, Date columns
+- [ ] Title column falls back to unique_id when title is NULL
 - [ ] Source filter buttons filter the displayed items
 - [ ] "All" filter shows all items
 - [ ] Empty database shows helpful message
 - [ ] DataTable is scrollable for large datasets
-- [ ] Data loading does not block TUI (uses worker thread or is demonstrably fast for 1000+ rows)
 - [ ] All tests pass
 
 **Verify:**
@@ -350,9 +363,9 @@ Type: Feature
 
 ---
 
-### Task 7: History/Analytics with Stats, Charts, and Summary
+### Task 7: History/Analytics with Stats and Text Tables
 
-**Objective:** Replace the History placeholder with a full analytics dashboard showing summary stats, source distribution bar charts, and daily trend data powered by Polars.
+**Objective:** Replace the History placeholder with an analytics dashboard showing summary stats, source distribution, and daily trends using text-based tables powered by Polars.
 
 **Dependencies:** Task 3
 
@@ -362,25 +375,22 @@ Type: Feature
 - Modify: `tests/test_tui_integration.py` (add analytics tests)
 
 **Key Decisions / Notes:**
-- Summary section at top: Total Items, Average/Day, Most Active Source, Date Range
-- Source distribution: horizontal ASCII bar charts using Unicode block chars (e.g., `ArXiv  ████████░░ 204 (36%)`)
-- Daily counts: show last N days with counts (text list, not chart — keeps it simple)
+- Summary section at top: Total Items, Average/Day, Most Active Source, Date Range (using Static widgets)
+- Source distribution: text-based table showing source name, item count, and percentage (using Static widgets, one per source)
+- Daily counts: show last N days with counts as a text list
 - Time range filter buttons: 7 Days, 30 Days, All Time — clicking re-queries DataService
 - Make filter buttons functional: on press → call `data_service.get_summary_stats(days=N)` and `get_source_distribution(days=N)` and update display
-- **Use `@work(thread=True)` for data loading** to avoid blocking the TUI event loop. Show a loading message while the worker runs, then update Static widgets from the worker callback.
 - Load data in `on_mount()` via data service methods
-- Bar chart rendering: helper function `render_bar(value, max_value, width=20)` → returns string of block chars
 - Handle edge cases: zero items, single source, all items on one day
 - Handle empty database: show "No data collected yet" with helpful guidance
 
 **Definition of Done:**
 - [ ] Summary section shows total items, avg/day, most active source, date range
-- [ ] Source distribution displayed as ASCII bar charts with percentages
+- [ ] Source distribution displayed as text table with counts and percentages
 - [ ] Daily counts shown for selected time range
 - [ ] Time range filter buttons change the displayed data
 - [ ] Empty database shows graceful message
 - [ ] Division by zero and edge cases handled
-- [ ] Data loading does not block TUI (uses worker thread or is demonstrably fast for 1000+ rows)
 - [ ] All tests pass
 
 **Verify:**

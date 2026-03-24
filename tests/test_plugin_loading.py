@@ -54,6 +54,7 @@ class TestResearchDigestInit:
 
         assert digest.config is not None
         from config_models import ResearchDigestConfig
+
         assert isinstance(digest.config, ResearchDigestConfig)
         assert digest.verbose is False
 
@@ -62,6 +63,7 @@ class TestResearchDigestInit:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         from config_models import ResearchDigestConfig
+
         assert isinstance(digest.config, ResearchDigestConfig)
         assert hasattr(digest.config, "scrapers")
         assert hasattr(digest.config, "output")
@@ -289,9 +291,9 @@ class TestRunScrapers:
         # Config is now a Pydantic model, access via attribute
         received_config = configs_received[0]
         # The mocktest config will be a dict because it's an extra field
-        if hasattr(received_config, 'test_value'):
+        if hasattr(received_config, "test_value"):
             assert received_config.test_value == 123
-        elif hasattr(received_config, '__getitem__'):
+        elif hasattr(received_config, "__getitem__"):
             assert received_config["test_value"] == 123
         else:
             # Try model_dump if it's a Pydantic model
@@ -323,6 +325,7 @@ class TestLoadConfig:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         from config_models import ResearchDigestConfig
+
         assert isinstance(digest.config, ResearchDigestConfig)
         assert hasattr(digest.config, "scrapers")
 
@@ -356,7 +359,7 @@ class TestLoadConfig:
         # With Pydantic validation, empty config should fail or use defaults
         # This will likely raise an error during initialization
         with pytest.raises(SystemExit):
-            digest = ResearchDigest(str(config_path), verbose=False)
+            ResearchDigest(str(config_path), verbose=False)
 
 
 @pytest.mark.integration
@@ -398,7 +401,7 @@ class TestCompleteWorkflow:
 
         scraper_names = [s.name.lower() for s in digest.scrapers]
         # Access scrapers config from Pydantic model
-        from config_models import ScrapersConfig
+
         scrapers_dict = digest.config.scrapers.model_dump()
         config_keys = scrapers_dict.keys()
 

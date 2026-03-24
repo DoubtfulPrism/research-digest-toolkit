@@ -3,8 +3,8 @@
 Analyze topic occurrences over time.
 """
 
-import typer
 import polars as pl
+import typer
 from rich.console import Console
 
 from database import get_connection
@@ -25,7 +25,9 @@ def analyze_topic_trends(db_path: str):
             )
 
             if df.is_empty():
-                console.print("[warning]No topic occurrences found in the database.[/warning]")
+                console.print(
+                    "[warning]No topic occurrences found in the database.[/warning]"
+                )
                 return
 
             df = df.with_columns(pl.col("date").str.to_datetime())

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for ConfigService."""
 
-
 import pytest
 import yaml
 

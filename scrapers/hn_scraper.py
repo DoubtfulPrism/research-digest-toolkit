@@ -123,11 +123,11 @@ def _format_story(story: dict) -> str:
 
     md_content = f"""---
 type: hackernews
-title: \"{title.replace('"', '“')}\""
-author: \"{story.get('by', 'unknown')}\""
-score: {story.get('score', 0)}
-comments: {story.get('descendants', 0)}
-date: {datetime.fromtimestamp(story.get('time', 0)).strftime('%Y-%m-%d')}
+title: \"{title.replace('"', "“")}\""
+author: \"{story.get("by", "unknown")}\""
+score: {story.get("score", 0)}
+comments: {story.get("descendants", 0)}
+date: {datetime.fromtimestamp(story.get("time", 0)).strftime("%Y-%m-%d")}
 url: {url}
 hn_url: {hn_url}
 tags: [hackernews, discussion]
@@ -135,9 +135,9 @@ tags: [hackernews, discussion]
 
 # {title}
 
-**Posted by:** {story.get('by', 'unknown')}
-**Score:** {story.get('score', 0)} points
-**Comments:** {story.get('descendants', 0)}
+**Posted by:** {story.get("by", "unknown")}
+**Score:** {story.get("score", 0)} points
+**Comments:** {story.get("descendants", 0)}
 **HN Discussion:** <{hn_url}>
 """
     if url:

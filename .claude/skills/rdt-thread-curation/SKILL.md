@@ -1,5 +1,5 @@
 ---
-name: thread-curation
+name: rdt-thread-curation
 description: |
   Batch process Twitter/X threads for research curation. Use when: (1) user has bookmarked threads on engineering culture, innovation, or tech topics, (2) need to download and organize Twitter discussions, (3) curating social media insights for Obsidian or NotebookLM. Covers creating URL lists, batch downloading, tagging, and analysis integration.
 author: Claude Code

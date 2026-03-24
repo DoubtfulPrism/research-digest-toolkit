@@ -14,7 +14,9 @@ import requests
 import typer
 from bs4 import BeautifulSoup
 
-app = typer.Typer(help="Download and format Twitter/X threads (uses Nitter, no API needed)")
+app = typer.Typer(
+    help="Download and format Twitter/X threads (uses Nitter, no API needed)"
+)
 
 # Nitter instances (fallback list - some may be down)
 NITTER_INSTANCES = [
@@ -196,16 +198,16 @@ def format_thread(thread_data: dict, format_type: str = "markdown") -> str:
     if format_type == "obsidian":
         output = f"""---
 type: twitter-thread
-author: {thread_data['author'] or 'Unknown'}
-handle: {thread_data['author_handle'] or 'Unknown'}
-date: {thread_data['date'] or 'Unknown'}
+author: {thread_data["author"] or "Unknown"}
+handle: {thread_data["author_handle"] or "Unknown"}
+date: {thread_data["date"] or "Unknown"}
 tags: [twitter, thread]
 ---
 
-# Thread by {thread_data['author'] or thread_data['author_handle']}
+# Thread by {thread_data["author"] or thread_data["author_handle"]}
 
-**Author:** {thread_data['author']} ({thread_data['author_handle']})
-**Date:** {thread_data['date']}
+**Author:** {thread_data["author"]} ({thread_data["author_handle"]})
+**Date:** {thread_data["date"]}
 
 ---
 
@@ -213,16 +215,16 @@ tags: [twitter, thread]
     elif format_type == "markdown":
         output = f"""# Twitter Thread
 
-**Author:** {thread_data['author']} ({thread_data['author_handle']})
-**Date:** {thread_data['date']}
+**Author:** {thread_data["author"]} ({thread_data["author_handle"]})
+**Date:** {thread_data["date"]}
 
 ---
 
 """
     else:  # text
         output = f"""Twitter Thread
-Author: {thread_data['author']} ({thread_data['author_handle']})
-Date: {thread_data['date']}
+Author: {thread_data["author"]} ({thread_data["author_handle"]})
+Date: {thread_data["date"]}
 
 ---
 
@@ -401,7 +403,10 @@ def main(
     """
     # Validate format
     if format not in ["markdown", "text", "obsidian"]:
-        print(f"Error: Invalid format '{format}'. Use markdown, text, or obsidian", file=sys.stderr)
+        print(
+            f"Error: Invalid format '{format}'. Use markdown, text, or obsidian",
+            file=sys.stderr,
+        )
         raise typer.Exit(1)
 
     # Collect URLs
@@ -473,9 +478,9 @@ def main(
 
     # Summary
     if verbose and total > 1:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Completed: {success_count}/{total} threads saved")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
 
 if __name__ == "__main__":

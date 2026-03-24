@@ -15,9 +15,7 @@ from typing import List, Optional
 
 import typer
 
-app = typer.Typer(
-    help="Convert between document formats (txt, md, html, docx, pdf)"
-)
+app = typer.Typer(help="Convert between document formats (txt, md, html, docx, pdf)")
 
 # Check for optional dependencies
 DOCX_AVAILABLE = False

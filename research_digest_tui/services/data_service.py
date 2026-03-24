@@ -7,6 +7,9 @@ from pathlib import Path
 
 import polars as pl
 
+# Validated source names — only these may be used as source_filter values
+_VALID_SOURCES: frozenset[str] = frozenset({"hn", "rss", "reddit", "arxiv"})
+
 
 class DataService:
     """Queries the research_digest_state.db SQLite database via Polars."""
@@ -51,19 +54,22 @@ class DataService:
         self, source_filter: str | None = None, limit: int = 100
     ) -> list[dict]:
         """Return chronological list of processed items, most recent first."""
+        if source_filter is not None and source_filter not in _VALID_SOURCES:
+            return []
         conn = self._conn()
         if conn is None:
             return []
         try:
+            cols = "source, unique_id, title, url, processed_at"
             if source_filter:
                 query = (
-                    f"SELECT source, unique_id, processed_at FROM processed_items "
+                    f"SELECT {cols} FROM processed_items "
                     f"WHERE source = '{source_filter}' "
                     f"ORDER BY processed_at DESC LIMIT {limit}"
                 )
             else:
                 query = (
-                    f"SELECT source, unique_id, processed_at FROM processed_items "
+                    f"SELECT {cols} FROM processed_items "
                     f"ORDER BY processed_at DESC LIMIT {limit}"
                 )
             df = pl.read_database(query, conn)
@@ -149,6 +155,25 @@ class DataService:
                 "date_range": "No data",
                 "avg_per_day": 0.0,
             }
+        finally:
+            conn.close()
+
+    def get_last_run_per_source(self) -> dict[str, str]:
+        """Return the most recent processed_at timestamp per source."""
+        conn = self._conn()
+        if conn is None:
+            return {}
+        try:
+            df = pl.read_database(
+                "SELECT source, MAX(processed_at) AS last_run "
+                "FROM processed_items GROUP BY source",
+                conn,
+            )
+            if df.is_empty():
+                return {}
+            return dict(zip(df["source"].to_list(), df["last_run"].to_list()))
+        except Exception:
+            return {}
         finally:
             conn.close()
 
