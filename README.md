@@ -123,6 +123,9 @@ chmod +x *.py *.sh
 
 # Check results
 cat research_digest/$(date +%Y-%m-%d)/REPORT.md
+
+# Or launch the interactive TUI
+python -m research_digest_tui
 ```
 
 ### 4. Automate (Optional)
@@ -149,7 +152,6 @@ crontab -e
 
 - **[README.md](README.md)** - Detailed tool documentation
 - **[AUTOMATION_GUIDE.md](AUTOMATION_GUIDE.md)** - Complete automation guide
-- **[MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md)** - Library modernization roadmap
 - **[NATIVE_ALTERNATIVES.md](NATIVE_ALTERNATIVES.md)** - Native Linux tools guide
 - **[NATIVE_TOOLS_SUMMARY.md](NATIVE_TOOLS_SUMMARY.md)** - Where we use native vs Python
 - **[THREAD_READER_GUIDE.md](THREAD_READER_GUIDE.md)** - Twitter thread collection guide
@@ -376,8 +378,6 @@ MIT License - See [LICENSE](LICENSE) file
 - **Phase 1 Complete:** Migrated to `rich` library for enhanced terminal output with progress bars, color-coded messages, and formatted tables
 - **Phase 2 Complete:** Integrated `tenacity` library for automatic retry logic with exponential backoff on all network requests
 - **Phase 3 Complete:** Migrated to `typer` library for modern CLI framework with type hints, better help output, and shell completion
-
-See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for complete details and roadmap.
 
 ---
 
