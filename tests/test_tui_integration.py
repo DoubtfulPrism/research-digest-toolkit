@@ -56,7 +56,7 @@ async def test_dashboard_creates_scraper_cards_from_config(tmp_path):
     db_path = tmp_path / "empty.db"
     app = ResearchDigestApp(config_path=config_path, db_path=db_path)
     async with app.run_test() as _:
-        cards = app.query(ScraperCard)
+        cards = app.screen.query(ScraperCard)
         # Config has 3 enabled + 1 disabled — dashboard shows all 4 with status badges
         assert len(cards) == 4
 
@@ -68,9 +68,9 @@ async def test_dashboard_status_bar_shows_real_item_counts(tmp_path):
     db_path = _make_db_with_items(tmp_path)
     app = ResearchDigestApp(config_path=config_path, db_path=db_path)
     async with app.run_test() as _:
-        status_bars = app.query(".status-bar")
+        status_bars = app.screen.query(".status-bar")
         assert len(status_bars) == 1
-        status_text = status_bars.first().renderable
+        status_text = status_bars.first().content
         assert "2" in str(status_text)  # 2 items in DB
 
 
@@ -81,9 +81,9 @@ async def test_dashboard_status_bar_shows_no_data_for_empty_db(tmp_path):
     db_path = tmp_path / "empty.db"
     app = ResearchDigestApp(config_path=config_path, db_path=db_path)
     async with app.run_test() as _:
-        status_bars = app.query(".status-bar")
+        status_bars = app.screen.query(".status-bar")
         assert len(status_bars) == 1
-        status_text = str(status_bars.first().renderable)
+        status_text = str(status_bars.first().content)
         assert "No data" in status_text or "0" in status_text
 
 
@@ -96,8 +96,8 @@ async def test_scraper_management_config_summary_is_dynamic(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("s")
         await pilot.pause()
-        config_summaries = app.query(".scraper-config")
-        all_text = " ".join(str(s.renderable) for s in config_summaries)
+        config_summaries = app.screen.query(".scraper-config")
+        all_text = " ".join(str(s.content) for s in config_summaries)
         # Service returns "Topics: 1 configured" for 1 topic; hardcoded has "AI, Platform Engineering"
         assert "Topics: 1 configured" in all_text
 
@@ -113,7 +113,7 @@ async def test_content_browser_has_data_table(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("l")
         await pilot.pause()
-        assert len(app.query(DataTable)) == 1
+        assert len(app.screen.query(DataTable)) == 1
 
 
 @pytest.mark.tui
@@ -127,7 +127,7 @@ async def test_content_browser_shows_rows_for_items_in_db(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("l")
         await pilot.pause()
-        table = app.query_one(DataTable)
+        table = app.screen.query_one(DataTable)
         assert table.row_count == 2  # 2 items in _make_db_with_items
 
 
@@ -142,8 +142,8 @@ async def test_history_shows_real_summary_stats(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("h")
         await pilot.pause()
-        summary = app.query_one("#stats-summary", Static)
-        assert "2" in str(summary.renderable)  # 2 items in DB
+        summary = app.screen.query_one("#stats-summary", Static)
+        assert "2" in str(summary.content)  # 2 items in DB
 
 
 @pytest.mark.tui
@@ -157,8 +157,8 @@ async def test_history_empty_db_shows_no_data(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("h")
         await pilot.pause()
-        summary = app.query_one("#stats-summary", Static)
-        text = str(summary.renderable)
+        summary = app.screen.query_one("#stats-summary", Static)
+        text = str(summary.content)
         assert "No data" in text or "0" in text
 
 
@@ -207,7 +207,9 @@ async def test_run_now_button_is_enabled(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("s")
         await pilot.pause()
-        run_buttons = [b for b in app.query(Button) if b.id and b.id.endswith("-run")]
+        run_buttons = [
+            b for b in app.screen.query(Button) if b.id and b.id.endswith("-run")
+        ]
         assert len(run_buttons) > 0
         assert all(not b.disabled for b in run_buttons)
 
@@ -224,7 +226,7 @@ async def test_toggle_button_is_enabled(tmp_path):
         await pilot.press("s")
         await pilot.pause()
         toggle_buttons = [
-            b for b in app.query(Button) if b.id and b.id.endswith("-toggle")
+            b for b in app.screen.query(Button) if b.id and b.id.endswith("-toggle")
         ]
         assert len(toggle_buttons) > 0
         assert all(not b.disabled for b in toggle_buttons)
@@ -242,7 +244,7 @@ async def test_configure_button_enabled(tmp_path):
         await pilot.press("s")
         await pilot.pause()
         configure_buttons = [
-            b for b in app.query(Button) if b.id and b.id.endswith("-configure")
+            b for b in app.screen.query(Button) if b.id and b.id.endswith("-configure")
         ]
         assert len(configure_buttons) > 0
         assert all(not b.disabled for b in configure_buttons)
@@ -262,7 +264,7 @@ async def test_configuration_screen_shows_scraper_list(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("c")
         await pilot.pause()
-        list_views = app.query(ListView)
+        list_views = app.screen.query(ListView)
         assert len(list_views) == 1
 
 
@@ -276,7 +278,7 @@ async def test_configuration_screen_shows_global_settings(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("c")
         await pilot.pause()
-        global_input = app.query("#global-days-back")
+        global_input = app.screen.query("#global-days-back")
         assert len(global_input) == 1
 
 
@@ -293,7 +295,7 @@ async def test_scheduler_screen_shows_schedule_input(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("u")
         await pilot.pause()
-        schedule_inputs = app.query("#schedule-input")
+        schedule_inputs = app.screen.query("#schedule-input")
         assert len(schedule_inputs) == 1
 
 
@@ -307,7 +309,7 @@ async def test_scheduler_screen_shows_status_widget(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("u")
         await pilot.pause()
-        status = app.query("#schedule-status")
+        status = app.screen.query("#schedule-status")
         assert len(status) == 1
 
 
@@ -334,7 +336,7 @@ async def test_scheduler_screen_shows_current_schedule(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("u")
         await pilot.pause()
-        inp = app.query_one("#schedule-input", Input)
+        inp = app.screen.query_one("#schedule-input", Input)
         assert inp.value == "every 4 hours"
 
 
@@ -344,7 +346,7 @@ async def test_scheduler_screen_shows_current_schedule(tmp_path):
 @pytest.mark.tui
 async def test_scheduler_example_button_fills_input(tmp_path):
     """Pressing an example button pre-fills the schedule input."""
-    from textual.widgets import Input
+    from textual.widgets import Button, Input
 
     config_path = _make_config(tmp_path)
     db_path = tmp_path / "empty.db"
@@ -352,9 +354,9 @@ async def test_scheduler_example_button_fills_input(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("u")
         await pilot.pause()
-        await pilot.click("#ex-4h")
+        app.screen.query_one("#ex-4h", Button).press()
         await pilot.pause()
-        inp = app.query_one("#schedule-input", Input)
+        inp = app.screen.query_one("#schedule-input", Input)
         assert inp.value == "every 4 hours"
 
 
@@ -369,10 +371,10 @@ async def test_scheduler_toggle_button_changes_state(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("u")
         await pilot.pause()
-        before = str(app.query_one("#schedule-status", Static).renderable)
-        app.query_one("#toggle-schedule", Button).press()
+        before = str(app.screen.query_one("#schedule-status", Static).content)
+        app.screen.query_one("#toggle-schedule", Button).press()
         await pilot.pause()
-        after = str(app.query_one("#schedule-status", Static).renderable)
+        after = str(app.screen.query_one("#schedule-status", Static).content)
         assert before != after
 
 
@@ -386,7 +388,7 @@ async def test_scheduler_save_button_present_on_screen(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("u")
         await pilot.pause()
-        save_btns = app.query("#save-schedule")
+        save_btns = app.screen.query("#save-schedule")
         assert len(save_btns) == 1
 
 
@@ -406,7 +408,7 @@ async def test_logs_filter_button_filters_by_source(tmp_path):
         await pilot.pause()
         await pilot.click("#filter-hn")
         await pilot.pause()
-        table = app.query_one(DataTable)
+        table = app.screen.query_one(DataTable)
         # DB has 1 hn item and 1 arxiv item — hn filter shows 1
         assert table.row_count == 1
 
@@ -426,7 +428,7 @@ async def test_logs_filter_all_button_shows_all_items(tmp_path):
         await pilot.pause()
         await pilot.click("#filter-all")
         await pilot.pause()
-        table = app.query_one(DataTable)
+        table = app.screen.query_one(DataTable)
         assert table.row_count == 2
 
 
@@ -444,12 +446,12 @@ async def test_history_filter_30d_button(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("h")
         await pilot.pause()
-        app.query_one("#filter-30d", Button).press()
+        app.screen.query_one("#filter-30d", Button).press()
         await pilot.pause()
         # Both items are within 30 days; stats still show 2 items
         from textual.widgets import Static
 
-        summary = app.query_one("#stats-summary", Static)
+        summary = app.screen.query_one("#stats-summary", Static)
         assert summary is not None
 
 
@@ -464,10 +466,10 @@ async def test_history_filter_all_button(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("h")
         await pilot.pause()
-        app.query_one("#filter-all", Button).press()
+        app.screen.query_one("#filter-all", Button).press()
         await pilot.pause()
-        summary = app.query_one("#stats-summary", Static)
-        assert "2" in str(summary.renderable)
+        summary = app.screen.query_one("#stats-summary", Static)
+        assert "2" in str(summary.content)
 
 
 # ─── Phase 7: Scheduler Save and Back ────────────────────────────────────────
@@ -484,7 +486,7 @@ async def test_scheduler_back_button_navigates_to_dashboard(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("u")
         await pilot.pause()
-        app.query_one("#back", Button).press()
+        app.screen.query_one("#back", Button).press()
         await pilot.pause()
         assert app.screen.__class__.__name__ == "Dashboard"
 
@@ -503,10 +505,10 @@ async def test_scheduler_empty_input_disables_save_button(tmp_path):
         # Fill the input via example button, then clear it
         await pilot.click("#ex-4h")
         await pilot.pause()
-        inp = app.query_one("#schedule-input", Input)
+        inp = app.screen.query_one("#schedule-input", Input)
         inp.value = ""  # Triggers on_input_changed with empty string
         await pilot.pause()
-        save_btn = app.query_one("#save-schedule", Button)
+        save_btn = app.screen.query_one("#save-schedule", Button)
         assert save_btn.disabled
 
 
@@ -522,10 +524,10 @@ async def test_scheduler_save_button_persists_schedule(tmp_path):
         await pilot.press("u")
         await pilot.pause()
         # Example button fills a valid schedule
-        await pilot.click("#ex-4h")
+        app.screen.query_one("#ex-4h", Button).press()
         await pilot.pause()
         # Save button is now enabled; press it
-        save_btn = app.query_one("#save-schedule", Button)
+        save_btn = app.screen.query_one("#save-schedule", Button)
         save_btn.press()
         await pilot.pause()
         assert app.scheduler_service.get_schedule_string() == "every 4 hours"
@@ -545,7 +547,7 @@ async def test_scraper_management_back_button_navigates_to_dashboard(tmp_path):
     async with app.run_test() as pilot:
         await pilot.press("s")
         await pilot.pause()
-        app.query_one("#back", Button).press()
+        app.screen.query_one("#back", Button).press()
         await pilot.pause()
         assert app.screen.__class__.__name__ == "Dashboard"
 
@@ -562,12 +564,12 @@ async def test_scraper_management_toggle_flips_enabled_state(tmp_path):
         await pilot.press("s")
         await pilot.pause()
         # hackernews is enabled → toggle button says "Disable"
-        toggle_btn = app.query_one("#hackernews-toggle", Button)
+        toggle_btn = app.screen.query_one("#hackernews-toggle", Button)
         assert "Disable" in str(toggle_btn.label)
         toggle_btn.press()
         await pilot.pause()
         # After toggle, hackernews is disabled → button now says "Enable"
-        new_toggle = app.query_one("#hackernews-toggle", Button)
+        new_toggle = app.screen.query_one("#hackernews-toggle", Button)
         assert "Enable" in str(new_toggle.label)
 
 
@@ -582,7 +584,7 @@ async def test_scraper_management_configure_pushes_configuration_screen(tmp_path
     async with app.run_test() as pilot:
         await pilot.press("s")
         await pilot.pause()
-        app.query_one("#hackernews-configure", Button).press()
+        app.screen.query_one("#hackernews-configure", Button).press()
         await pilot.pause()
         assert app.screen.__class__.__name__ == "Configuration"
 
@@ -612,7 +614,7 @@ async def test_scraper_run_modal_mounts_and_closes(tmp_path):
         app.runner_service.run_scraper = fake_run
 
         # Press run — modal is pushed
-        app.query_one("#hackernews-run", Button).press()
+        app.screen.query_one("#hackernews-run", Button).press()
         await pilot.pause()
         assert isinstance(app.screen, ScraperOutputModal)
 
@@ -621,7 +623,7 @@ async def test_scraper_run_modal_mounts_and_closes(tmp_path):
         await pilot.pause()
 
         # Close button is now enabled after on_complete(True)
-        close_btn = app.query_one("#close-modal", Button)
+        close_btn = app.screen.query_one("#close-modal", Button)
         assert not close_btn.disabled
 
         # Press close — modal is dismissed

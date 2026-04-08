@@ -76,7 +76,7 @@ async def test_watch_status_updates_header_to_running():
         card.status = "running"
         await pilot.pause()
         header = card.query_one(".card-header", Static)
-        assert "Running" in str(header.renderable)
+        assert "Running" in str(header.content)
 
 
 @pytest.mark.tui
@@ -88,7 +88,7 @@ async def test_watch_status_updates_header_to_idle():
         card.status = "idle"
         await pilot.pause()
         header = card.query_one(".card-header", Static)
-        assert "Idle" in str(header.renderable)
+        assert "Idle" in str(header.content)
 
 
 @pytest.mark.tui
