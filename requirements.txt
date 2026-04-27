@@ -28,6 +28,6 @@ arxiv>=2.1.0
 textual==8.1.1
 
 # Testing dependencies
-pytest>=7.4.0
+pytest>=9.0.3
 pytest-cov>=4.1.0
 pytest-asyncio>=0.23.0
