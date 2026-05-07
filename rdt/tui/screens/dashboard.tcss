@@ -1,0 +1,48 @@
+/* Dashboard screen styles */
+
+.status-bar {
+    background: $panel;
+    color: $text;
+    padding: 1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.section-header {
+    color: $accent;
+    text-style: bold;
+    margin-top: 1;
+    margin-bottom: 1;
+}
+
+.dashboard-action-bar {
+    height: 3;
+    align: left middle;
+    margin-bottom: 1;
+    width: 100%;
+}
+
+.dashboard-action-bar .section-header {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 2;
+    width: 1fr;
+}
+
+.dashboard-action-bar Button {
+    margin-left: 1;
+}
+
+.scrapers-grid {
+    height: auto;
+}
+
+.scrapers-grid Horizontal {
+    height: auto;
+}
+
+.activity-log {
+    height: 10;
+    border: solid $primary;
+    padding: 1;
+}

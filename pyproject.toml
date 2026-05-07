@@ -44,6 +44,8 @@ dependencies = [
     "typer>=0.9.0",
     "rich>=14.0.0",
     "tenacity>=8.0.0",
+    "PyMuPDF>=1.23.0; sys_platform != 'linux'",
+    "pyspellchecker>=0.8.0",
 ]
 
 [project.optional-dependencies]
@@ -57,6 +59,7 @@ dev = [
 
 [project.scripts]
 Research_Toolkit = "research_digest_tui.cli:main"
+rdt = "rdt.cli.main:app"
 
 [project.urls]
 Homepage = "https://github.com/DoubtfulPrism/research-digest-toolkit"
@@ -65,7 +68,7 @@ Issues = "https://github.com/DoubtfulPrism/research-digest-toolkit/issues"
 
 [tool.hatch.build.targets.wheel]
 # Named packages auto-include all their files (including .tcss stylesheets)
-packages = ["research_digest_tui", "scrapers"]
+packages = ["research_digest_tui", "scrapers", "rdt"]
 # Top-level runtime modules included for dev-fallback in RunnerService
 include = [
     "config_models.py",

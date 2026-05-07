@@ -66,3 +66,4 @@ http_cache/
 # Archive (completed planning docs)
 docs/archive/
 .worktrees/
+research_digest_state.db

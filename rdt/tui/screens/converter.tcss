@@ -1,0 +1,43 @@
+ConverterScreen {
+    align: center middle;
+}
+
+.main-container {
+    width: 80%;
+    height: 80%;
+    border: solid green;
+    padding: 1 2;
+}
+
+.header-title {
+    text-align: center;
+    text-style: bold;
+    padding-bottom: 2;
+}
+
+.input-row {
+    height: 3;
+    align: left middle;
+    margin-bottom: 1;
+}
+
+.input-row Static {
+    width: 20%;
+    text-align: right;
+    padding-right: 1;
+}
+
+.input-row Input, .input-row Select {
+    width: 80%;
+}
+
+Button#process_btn {
+    width: 100%;
+    margin-top: 2;
+    margin-bottom: 2;
+}
+
+.log-view {
+    height: 1fr;
+    border: solid panel;
+}

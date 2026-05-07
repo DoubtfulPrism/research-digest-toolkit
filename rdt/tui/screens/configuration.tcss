@@ -1,0 +1,102 @@
+/* Configuration screen styles */
+
+.screen-title {
+    text-style: bold;
+    color: cyan;
+    text-align: center;
+    padding: 1;
+    margin-bottom: 1;
+}
+
+#config-layout {
+    height: 1fr;
+}
+
+#config-left {
+    width: 25%;
+    border-right: solid $panel;
+    padding: 1;
+}
+
+#config-right {
+    width: 75%;
+    padding: 1 2;
+    height: auto;
+}
+
+#scraper-form, #feeds-section, #feeds-list, #add-feed-form, #hn-fields, #arxiv-fields, #reddit-fields {
+    height: auto;
+}
+
+.panel-heading {
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 1;
+}
+
+.section-heading {
+    text-style: bold;
+    color: $accent;
+    margin-top: 1;
+    margin-bottom: 1;
+}
+
+.subsection-heading {
+    text-style: bold;
+    color: $text;
+    margin-top: 1;
+    margin-bottom: 1;
+}
+
+.field-label {
+    color: $text-muted;
+    margin-top: 1;
+}
+
+.field-hint {
+    color: $text-muted;
+    text-style: italic;
+    margin-bottom: 1;
+}
+
+.divider {
+    color: $panel;
+    margin: 1 0;
+}
+
+.error-msg {
+    color: red;
+    margin-top: 1;
+}
+
+.hidden {
+    display: none;
+}
+
+.form-actions {
+    height: auto;
+    margin-top: 1;
+}
+
+.form-actions Button {
+    margin-right: 1;
+}
+
+.feed-row {
+    height: auto;
+    margin-bottom: 1;
+}
+
+.feed-label {
+    width: 1fr;
+}
+
+.bottom-actions {
+    height: auto;
+    padding: 1;
+    background: $panel;
+}
+
+.bottom-actions Button {
+    margin-right: 1;
+}
