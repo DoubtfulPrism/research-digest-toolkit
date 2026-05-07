@@ -46,6 +46,18 @@ Automatically discovers, scrapes, and organizes content from:
 
 ---
 
+## 📦 Installation
+
+```bash
+pip install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
+```
+
+Then launch with `Research_Toolkit`. A starter config is created at `~/.research_digest/research_config.yaml` on first run.
+
+See [INSTALL.md](INSTALL.md) for platform-specific instructions (macOS, Windows) and development setup.
+
+---
+
 ## 🛠️ The Toolkit
 
 The toolkit is composed of a central orchestrator, a set of scraper plugins, and several standalone utility tools.

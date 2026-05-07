@@ -12,8 +12,49 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 @pytest.mark.unit
+def test_build_scraper_cmd_uses_installed_binary_when_found(tmp_path):
+    """_build_scraper_cmd uses the installed research-digest binary when available."""
+    from research_digest_tui.services.runner_service import _build_scraper_cmd
+
+    config_path = tmp_path / "config.yaml"
+    installed_path = "/usr/local/bin/research-digest"
+
+    with patch(
+        "research_digest_tui.services.runner_service.shutil.which",
+        return_value=installed_path,
+    ):
+        cmd = _build_scraper_cmd(config_path, "hackernews")
+
+    assert cmd[0] == installed_path
+    assert "--config" in cmd
+    assert str(config_path) in cmd
+    assert "--scraper" in cmd
+    assert "hackernews" in cmd
+
+
+@pytest.mark.unit
+def test_build_scraper_cmd_falls_back_to_sys_executable_when_not_installed(tmp_path):
+    """_build_scraper_cmd falls back to sys.executable + research_digest.py when not installed."""
+    from research_digest_tui.services.runner_service import _build_scraper_cmd
+
+    config_path = tmp_path / "config.yaml"
+
+    with patch(
+        "research_digest_tui.services.runner_service.shutil.which", return_value=None
+    ):
+        cmd = _build_scraper_cmd(config_path, "rss")
+
+    assert cmd[0] == sys.executable
+    assert "research_digest.py" in cmd[1]
+    assert "--config" in cmd
+    assert str(config_path) in cmd
+    assert "--scraper" in cmd
+    assert "rss" in cmd
+
+
+@pytest.mark.unit
 def test_runner_service_builds_correct_command(tmp_path):
-    """run_scraper builds the correct subprocess command."""
+    """run_scraper builds the correct subprocess command (dev fallback path)."""
     from research_digest_tui.services.runner_service import RunnerService
 
     config_path = tmp_path / "config.yaml"
@@ -26,15 +67,21 @@ def test_runner_service_builds_correct_command(tmp_path):
     mock_proc.stdout = iter([])
     mock_proc.wait.return_value = 0
 
-    with patch(
-        "research_digest_tui.services.runner_service.subprocess.Popen"
-    ) as mock_popen:
+    with (
+        patch(
+            "research_digest_tui.services.runner_service.subprocess.Popen"
+        ) as mock_popen,
+        patch(
+            "research_digest_tui.services.runner_service.shutil.which",
+            return_value=None,
+        ),
+    ):
         mock_popen.return_value = mock_proc
         svc.run_scraper("hackernews", lines.append, completed.append)
 
         mock_popen.assert_called_once()
         cmd = mock_popen.call_args[0][0]
-        assert "research_digest.py" in cmd
+        assert any("research_digest.py" in item for item in cmd)
         assert "--config" in cmd
         assert str(config_path) in cmd
         assert "--scraper" in cmd

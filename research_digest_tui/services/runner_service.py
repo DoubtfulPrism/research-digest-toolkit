@@ -1,10 +1,39 @@
 #!/usr/bin/env python3
 """RunnerService — executes scrapers as subprocesses and streams output."""
 
+import shutil
 import subprocess
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from subprocess import PIPE, STDOUT
+
+
+def _build_scraper_cmd(config_path: Path, scraper_key: str) -> list[str]:
+    """Build the subprocess command for running a scraper.
+
+    Prefers the installed ``research-digest`` console script when available.
+    Falls back to ``sys.executable research_digest.py`` for dev usage.
+
+    Note: The current implementation previously used bare ``"python"`` which
+    may not resolve in all venv configurations. Using ``sys.executable`` fixes
+    this pre-existing defect while also supporting installed-package usage.
+
+    Args:
+        config_path: Path to the config YAML file.
+        scraper_key: Config key for the scraper (e.g. ``"hackernews"``).
+
+    Returns:
+        Command list suitable for ``subprocess.Popen``.
+    """
+    installed = shutil.which("research-digest")
+    if installed:
+        interpreter: list[str] = [installed]
+    else:
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        interpreter = [sys.executable, str(repo_root / "research_digest.py")]
+
+    return interpreter + ["--config", str(config_path), "--scraper", scraper_key]
 
 
 class RunnerService:
@@ -33,14 +62,7 @@ class RunnerService:
             on_line: Called for each output line from the scraper process.
             on_complete: Called with True on success, False on failure.
         """
-        cmd = [
-            "python",
-            "research_digest.py",
-            "--config",
-            str(self._config_path),
-            "--scraper",
-            scraper_key,
-        ]
+        cmd = _build_scraper_cmd(self._config_path, scraper_key)
         try:
             proc = subprocess.Popen(cmd, stdout=PIPE, stderr=STDOUT, text=True)
             if proc.stdout is not None:

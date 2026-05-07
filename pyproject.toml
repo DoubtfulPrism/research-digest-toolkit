@@ -57,7 +57,6 @@ dev = [
 
 [project.scripts]
 Research_Toolkit = "research_digest_tui.cli:main"
-research-digest = "research_digest:app"
 
 [project.urls]
 Homepage = "https://github.com/DoubtfulPrism/research-digest-toolkit"
@@ -67,7 +66,7 @@ Issues = "https://github.com/DoubtfulPrism/research-digest-toolkit/issues"
 [tool.hatch.build.targets.wheel]
 # Named packages auto-include all their files (including .tcss stylesheets)
 packages = ["research_digest_tui", "scrapers"]
-# Top-level runtime modules: shims + CLI orchestrator
+# Top-level runtime modules included for dev-fallback in RunnerService
 include = [
     "config_models.py",
     "scheduler_utils.py",

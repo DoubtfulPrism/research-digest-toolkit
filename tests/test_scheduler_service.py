@@ -79,9 +79,9 @@ def test_set_schedule_raises_on_invalid_string(tmp_path):
     """set_schedule raises ScheduleError for invalid schedule strings."""
     config_file = _write_config(tmp_path)
 
+    from research_digest_tui.scheduler_utils import ScheduleError
     from research_digest_tui.services.config_service import ConfigService
     from research_digest_tui.services.scheduler_service import SchedulerService
-    from scheduler_utils import ScheduleError
 
     svc = SchedulerService(ConfigService(config_file))
 

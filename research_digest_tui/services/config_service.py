@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from config_models import ResearchDigestConfig
+from research_digest_tui.config_models import ResearchDigestConfig
 
 # Maps YAML config keys → database source names
 SOURCE_NAME_MAPPING: dict[str, str] = {

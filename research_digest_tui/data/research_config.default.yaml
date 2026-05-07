@@ -1,0 +1,85 @@
+# Research Digest Toolkit — Default Configuration
+# This file was copied to ~/.research_digest/research_config.yaml on first run.
+# Edit it to enable scrapers and customise your research topics.
+
+# Time range to search (in days)
+days_back: 7
+
+# Output settings
+output:
+  base_dir: "research_digest"
+  use_date_folders: true   # Creates folders like 2025-12-17/
+  obsidian_vault: ""       # Path to your Obsidian vault (optional)
+
+# Scraper configurations — all disabled by default.
+# Enable the ones you want and fill in any required settings.
+scrapers:
+  # HackerNews: scrapes top stories matching your topics
+  hackernews:
+    enabled: false
+    min_points: 50
+    min_comments: 20
+    search_topics:
+      - "engineering culture"
+      - "platform engineering"
+      # Add your own topics here
+
+  # RSS: monitors Atom/RSS feeds
+  rss:
+    enabled: false
+    days_back: 7
+    feeds: []
+      # Example feed entry:
+      # - url: "https://example.com/feed/"
+      #   name: "Blog Name"
+      #   tags: ["leadership", "engineering"]
+
+  # Reddit: monitors subreddits
+  reddit:
+    enabled: false
+    time_filter: week   # hour, day, week, month, year, all
+    subreddits: []
+      # Example subreddit entry:
+      # - name: "ExperiencedDevs"
+      #   min_upvotes: 100
+      #   tags: ["career", "leadership"]
+
+  # ArXiv: fetches academic papers by search query
+  arxiv:
+    enabled: false
+    days_back: 30
+    max_results: 25
+    search_queries: []
+      # Example query:
+      # - '"knowledge management" OR "personal knowledge management"'
+
+# Research topics used for auto-tagging (Obsidian frontmatter)
+topics:
+  software_leadership:
+    - "engineering culture"
+    - "engineering manager"
+    - "platform engineering"
+  productivity:
+    - "knowledge management"
+    - "PKM"
+    - "note-taking"
+
+# Processing options
+processing:
+  convert_documents: true   # Convert PDFs/DOCX to markdown (requires pandoc)
+  auto_tag: true
+  format_for_obsidian: true
+  split_large_files: true
+  max_file_size: 400000     # characters (NotebookLM limit)
+
+# Output formats
+formats:
+  obsidian: true
+  markdown: true
+  plain_text: false
+
+# Notification/Report
+report:
+  generate_summary: true
+  email_report: false
+  email_address: ""
