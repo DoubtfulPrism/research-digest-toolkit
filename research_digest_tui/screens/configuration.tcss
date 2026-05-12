@@ -95,3 +95,56 @@
 .bottom-actions Button {
     margin-right: 1;
 }
+
+/* Directory Picker Modal Styles */
+DirectoryPicker {
+    align: center middle;
+}
+
+#dir-picker-dialog {
+    width: 60%;
+    height: 70%;
+    padding: 1 2;
+    background: $surface;
+    border: thick $primary;
+}
+
+#dir-picker-title {
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 1;
+    text-align: center;
+}
+
+#dir-picker-tree {
+    height: 1fr;
+    border: solid $panel;
+    margin-bottom: 1;
+}
+
+#dir-picker-selected {
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+#dir-picker-buttons {
+    height: auto;
+    align: right middle;
+}
+
+#dir-picker-buttons Button {
+    margin-left: 1;
+}
+
+.dir-picker-row {
+    height: auto;
+}
+
+.dir-picker-row Input {
+    width: 1fr;
+    margin-right: 1;
+}
+
+.dir-picker-row Button {
+    width: auto;
+}

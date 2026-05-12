@@ -269,3 +269,20 @@ class ConfigService:
     def get_source_name_mapping(self) -> dict[str, str]:
         """Return mapping from config key → database source name."""
         return dict(SOURCE_NAME_MAPPING)
+
+    def get_output_base_dir(self) -> str:
+        """Return the configured base directory for output."""
+        output_cfg = getattr(self.config, "output", None)
+        if output_cfg is not None:
+            return getattr(output_cfg, "base_dir", "research_digest")
+        return "research_digest"
+
+    def set_output_base_dir(self, path: str) -> None:
+        """Set the output base directory."""
+        from ruamel.yaml import CommentedMap  # type: ignore[import-untyped]
+
+        raw = self._get_raw()
+        if "output" not in raw:
+            raw["output"] = CommentedMap()
+        raw["output"]["base_dir"] = path
+        self.save()

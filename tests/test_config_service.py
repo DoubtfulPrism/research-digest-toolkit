@@ -192,3 +192,34 @@ def test_reload_refreshes_config(tmp_path):
     service.reload()
 
     assert service.config.days_back == 30
+
+
+@pytest.mark.unit
+def test_get_output_base_dir(tmp_path):
+    """get_output_base_dir() returns the configured base directory or default."""
+    config_data = {"output": {"base_dir": "/custom/path"}}
+    config_file = tmp_path / "config1.yaml"
+    config_file.write_text(yaml.dump(config_data))
+    service1 = ConfigService(config_path=config_file)
+    assert service1.get_output_base_dir() == "/custom/path"
+
+    config_file2 = tmp_path / "config2.yaml"
+    config_file2.write_text(yaml.dump({}))
+    service2 = ConfigService(config_path=config_file2)
+    assert service2.get_output_base_dir() == "research_digest"
+
+
+@pytest.mark.unit
+def test_set_output_base_dir(tmp_path):
+    """set_output_base_dir() updates the config and saves it."""
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.dump({}))
+    service = ConfigService(config_path=config_file)
+    
+    service.set_output_base_dir("/new/test/dir")
+    
+    assert service.get_output_base_dir() == "/new/test/dir"
+    
+    with open(config_file) as f:
+        data = yaml.safe_load(f)
+    assert data["output"]["base_dir"] == "/new/test/dir"

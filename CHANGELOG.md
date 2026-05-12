@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2026-05-12
+
+### Added
+- **Configurable output directory** — The output `base_dir` can now be set from
+  the TUI Configuration screen via a new "Output Directory" field and interactive
+  "Browse" button that opens a `DirectoryTree`-based directory picker modal.
+- `ConfigService.get_output_base_dir()` and `ConfigService.set_output_base_dir()`
+  methods for reading/writing the `output.base_dir` config value.
+- `DirectoryPicker` modal screen (`rdt/tui/screens/directory_picker.py`) using
+  Textual's `DirectoryTree` widget.
+- Unit tests for `get_output_base_dir` and `set_output_base_dir` in
+  `tests/test_config_service.py`.
+
+### Changed
+- Version bumped to `1.0.1`.
+
+---
+
 ## [1.0.0] - 2026-05-07
 
 ### Added

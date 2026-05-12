@@ -15,6 +15,7 @@ from textual.widgets import (
     Select,
     Static,
 )
+from .directory_picker import DirectoryPicker
 
 _SCRAPER_KEYS = ["hackernews", "rss", "reddit", "arxiv"]
 _SCRAPER_LABELS = {
@@ -53,6 +54,10 @@ class Configuration(Screen):
                 yield Static("Global Settings", classes="section-heading")
                 yield Static("Days Back (global):", classes="field-label")
                 yield Input(id="global-days-back", placeholder="7")
+                yield Static("Output Directory:", classes="field-label")
+                with Horizontal(classes="dir-picker-row"):
+                    yield Input(id="global-output-dir", placeholder="research_digest")
+                    yield Button("Browse", id="browse-output-dir")
                 yield Static("Credential Command:", classes="field-label")
                 yield Input(
                     id="credential-command",
@@ -137,6 +142,8 @@ class Configuration(Screen):
         self.query_one("#global-days-back", Input).value = str(config.days_back)
         cmd = self.app.config_service.get_credential_command() or ""
         self.query_one("#credential-command", Input).value = cmd
+        out_dir = self.app.config_service.get_output_base_dir()
+        self.query_one("#global-output-dir", Input).value = out_dir
 
     async def _select_scraper(self, key: str) -> None:
         list_view = self.query_one("#scraper-list", ListView)
@@ -233,6 +240,14 @@ class Configuration(Screen):
         elif btn_id == "save-global":
             self._save_global_settings()
 
+        elif btn_id == "browse-output-dir":
+            def set_output_dir(path: str | None) -> None:
+                if path:
+                    self.query_one("#global-output-dir", Input).value = path
+
+            current_path = self.query_one("#global-output-dir", Input).value
+            self.app.push_screen(DirectoryPicker(start_path=current_path or "."), set_output_dir)
+
         elif btn_id == "save-scraper":
             self._save_scraper_settings()
 
@@ -290,6 +305,11 @@ class Configuration(Screen):
             raw["days_back"] = days_back
             self.app.config_service.save()
             self.app.config_service.set_credential_command(cred_cmd)
+            
+            out_dir = self.query_one("#global-output-dir", Input).value.strip()
+            if out_dir:
+                self.app.config_service.set_output_base_dir(out_dir)
+
             self.app.notify("Global settings saved")
         except Exception as e:
             error.update(f"Error: {e}")
