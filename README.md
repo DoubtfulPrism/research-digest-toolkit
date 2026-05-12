@@ -48,20 +48,21 @@ Automatically discovers, scrapes, and organizes content from:
 
 ## 📦 Installation
 
-To install the full suite (including the new interactive TUI), we provide an automated installer script that handles dependencies and creates a global wrapper command (`rdt`) in your `~/.local/bin` folder.
+Install globally with [uv](https://docs.astral.sh/uv/) — no virtual environment activation required:
 
 ```bash
-# Clone the repository
-git clone https://github.com/DoubtfulPrism/research-digest-toolkit.git
-cd research-digest-toolkit
+uv tool install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
+```
 
-# Run the automated installer
-bash install.sh
+Or with [pipx](https://pipx.pypa.io/):
+
+```bash
+pipx install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
 ```
 
 Then launch the terminal UI with `rdt tui`! A starter config is created at `~/.research_digest/research_config.yaml` on first run.
 
-See [INSTALL.md](INSTALL.md) for platform-specific instructions (macOS, Windows) and development setup.
+See [INSTALL.md](INSTALL.md) for platform-specific instructions, upgrading, and development setup.
 
 ---
 
@@ -97,24 +98,18 @@ The toolkit is composed of a central orchestrator, a set of scraper plugins, and
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### 1. Install
 
 ```bash
-# Python packages
-pip install --user -r requirements.txt
-
-# Native tools (optional but recommended for quality)
-sudo dnf install pandoc poppler-utils  # Fedora/RHEL
-# or
-sudo apt install pandoc poppler-utils  # Debian/Ubuntu
+uv tool install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
 ```
 
 ### 2. Configure Your Scrapers
 
-Edit `research_config.yaml` to enable and configure your desired scrapers:
+Edit `~/.research_digest/research_config.yaml` (created on first run) to enable and configure your desired scrapers:
 
 ```yaml
-# In research_config.yaml
+# In ~/.research_digest/research_config.yaml
 scrapers:
   rss:
     enabled: true
@@ -131,20 +126,11 @@ scrapers:
 ### 3. Run
 
 ```bash
-# Make scripts executable
-chmod +x *.py *.sh
+# Launch the interactive TUI
+rdt tui
 
-# Run the digest once
-./research_digest.py
-
-# Or, run on a schedule (e.g., every 4 hours)
-./research_digest.py --schedule "every(4).hours"
-
-# Check results
-cat research_digest/$(date +%Y-%m-%d)/REPORT.md
-
-# Or launch the interactive TUI
-python -m research_digest_tui
+# Or convert a document to markdown
+rdt convert paper.pdf
 ```
 
 ### 4. Automate (Optional)
@@ -286,7 +272,7 @@ See [AUTOMATION_GUIDE.md](AUTOMATION_GUIDE.md) for detailed configuration option
 
 The project has comprehensive automated tests with **388 tests** and **80%+ overall coverage**.
 
-**Run tests:**
+**Run tests (from a [development install](INSTALL.md#development-install)):**
 ```bash
 # All tests
 pytest tests/
@@ -459,5 +445,5 @@ All tools are:
 
 ---
 
-*Last updated: January 2026*
+*Last updated: May 2026*
 *Development approach: Vibecoded (AI-assisted)*

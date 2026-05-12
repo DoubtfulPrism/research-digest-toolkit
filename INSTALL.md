@@ -1,33 +1,45 @@
 # Installation Guide — Research Digest Toolkit
 
-## Quick Install
+## Quick Install (Recommended)
 
-### Linux / macOS
+Install globally — no virtual environment activation required.
 
-With [uv](https://docs.astral.sh/uv/) (recommended):
-
-```bash
-uv pip install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
-```
-
-Or with pip:
+### With [uv](https://docs.astral.sh/uv/) (recommended)
 
 ```bash
-pip install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
+uv tool install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
 ```
 
-### macOS (Homebrew Python)
+### With [pipx](https://pipx.pypa.io/)
 
 ```bash
-brew install python
-pip3 install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
+pipx install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
 ```
 
-### Windows (winget)
+Both commands create an isolated environment behind the scenes — you never need to
+activate anything. The `rdt` and `Research_Toolkit` commands are placed in `~/.local/bin/`
+automatically.
 
-```powershell
-winget install Python.Python.3
-pip install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@main
+> **Note:** Ensure `~/.local/bin` is on your `PATH`. Most Linux distributions include it
+> by default. If not, add `export PATH="$HOME/.local/bin:$PATH"` to your shell profile.
+
+### Platform-Specific Prerequisites
+
+| Platform | Python |
+|----------|--------|
+| **Linux (Fedora/RHEL)** | `sudo dnf install python3` |
+| **Linux (Debian/Ubuntu)** | `sudo apt install python3` |
+| **macOS (Homebrew)** | `brew install python` |
+| **Windows** | `winget install Python.Python.3` |
+
+Optional native tools for higher-quality document conversion:
+
+```bash
+# Fedora/RHEL
+sudo dnf install pandoc poppler-utils
+
+# Debian/Ubuntu
+sudo apt install pandoc poppler-utils
 ```
 
 ---
@@ -37,7 +49,7 @@ pip install git+https://github.com/DoubtfulPrism/research-digest-toolkit.git@mai
 Launch the TUI:
 
 ```bash
-Research_Toolkit
+rdt tui
 ```
 
 On first run, a starter config is created at `~/.research_digest/research_config.yaml`.
@@ -45,20 +57,44 @@ Edit it to enable scrapers and customise your research topics.
 
 ---
 
+## Upgrading
+
+```bash
+# uv
+uv tool upgrade research-digest-toolkit
+
+# pipx
+pipx upgrade research-digest-toolkit
+```
+
+---
+
 ## Development Install
 
-Clone the repository and install in editable mode:
+Clone the repository and set up an editable development environment:
 
 ```bash
 git clone https://github.com/DoubtfulPrism/research-digest-toolkit.git
 cd research-digest-toolkit
-uv pip install -e ".[dev]"
+
+# Option A: automated setup
+bash install.sh
+
+# Option B: manual setup
+uv sync --all-extras
+source .venv/bin/activate
 ```
 
-Run the TUI directly:
+Run the TUI from the development environment:
 
 ```bash
-python -m research_digest_tui
+rdt tui
+```
+
+Run the test suite:
+
+```bash
+pytest tests/
 ```
 
 ---

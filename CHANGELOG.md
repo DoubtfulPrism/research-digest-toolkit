@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.2] - 2026-05-12
+
+### Fixed
+- **Installation documentation overhaul** — README and INSTALL.md now use
+  `uv tool install` / `pipx install` as the primary install path. Users no
+  longer need to clone the repo or activate a virtual environment.
+- `install.sh` repurposed as a developer-only setup script (uses `uv sync`).
+  Previously it generated a wrapper that hardcoded `.venv/bin/python`, which
+  broke fresh installs.
+- Removed legacy `pip install -r requirements.txt` instructions from Quick Start.
+- Updated run commands throughout README to use `rdt tui` / `rdt convert`
+  instead of `./research_digest.py` and `python -m research_digest_tui`.
+
+### Changed
+- Version bumped to `1.0.2`.
+
+---
+
 ## [1.0.1] - 2026-05-12
 
 ### Added
@@ -42,8 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Global `rdt` CLI command** — Replaces the old `Research_Toolkit` entry point.
   - `rdt tui` — Launch the TUI.
   - `rdt convert <file>` — Convert a PDF/DOCX directly from the command line.
-- **`install.sh` installer** — One-command setup that installs dependencies via `uv` and
-  writes a global wrapper to `~/.local/bin/rdt`. No manual venv activation required.
 - **Hybrid ingestion engine** — `rdt/core/converter.py` uses native Linux tools
   (`pdftotext`, `pandoc`) where available, falling back to PyMuPDF on other platforms.
 - **Obsidian and Substack adapters** — Export converted markdown directly to either format.
@@ -66,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Version bumped to `1.0.0` — Production/Stable classifier applied.
 - `pyproject.toml` updated with `rdt` entry point alongside legacy `Research_Toolkit`.
-- README overhauled — installation section updated to reflect `install.sh` workflow.
+- README overhauled — installation section and quick start updated.
 
 ### Known Issues
 - `tests/test_rss_scraper.py::TestFetchFeed` — 3 tests require `pytest-httpx` (not in
