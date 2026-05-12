@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-digest-toolkit"
-version = "1.0.2"
+version = "1.0.3"
 description = "Automated research aggregation TUI for software leadership and academic research"
 readme = "README.md"
 requires-python = ">=3.9"

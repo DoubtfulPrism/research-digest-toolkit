@@ -99,3 +99,93 @@ def test_bundled_default_returns_path_within_package():
     assert "research_digest_tui" in str(path)
     assert path.name == "research_config.default.yaml"
     assert path.exists(), f"Bundled default config not found at: {path}"
+
+
+# ---------------------------------------------------------------------------
+# rdt update CLI command
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+def test_rdt_update_command_no_update():
+    """rdt update reports 'latest' when no update is available."""
+    from rdt.cli.main import app
+    from typer.testing import CliRunner
+
+    runner = CliRunner()
+
+    from rdt.tui.services.update_service import UpdateResult
+
+    mock_result = UpdateResult(
+        available=False,
+        local_version="1.0.2",
+        remote_version="1.0.2",
+        error=None,
+    )
+
+    with patch("rdt.cli.main.UpdateService") as MockService:
+        MockService.return_value.check_for_update.return_value = mock_result
+        result = runner.invoke(app, ["update"])
+
+    assert result.exit_code == 0
+    assert "latest" in result.output.lower() or "1.0.2" in result.output
+
+
+@pytest.mark.unit
+def test_rdt_update_command_with_update_accepted():
+    """rdt update calls perform_update when user accepts."""
+    from rdt.cli.main import app
+    from typer.testing import CliRunner
+
+    runner = CliRunner()
+
+    from rdt.tui.services.update_service import UpdateResult, UpdateOutcome
+
+    mock_result = UpdateResult(
+        available=True,
+        local_version="1.0.2",
+        remote_version="1.1.0",
+        error=None,
+    )
+    mock_outcome = UpdateOutcome(
+        success=True,
+        method="uv",
+        new_version="1.1.0",
+        error=None,
+    )
+
+    with patch("rdt.cli.main.UpdateService") as MockService:
+        instance = MockService.return_value
+        instance.check_for_update.return_value = mock_result
+        instance.perform_update.return_value = mock_outcome
+        result = runner.invoke(app, ["update", "--yes"])
+
+    assert result.exit_code == 0
+    instance.perform_update.assert_called_once()
+
+
+@pytest.mark.unit
+def test_rdt_update_command_with_update_declined():
+    """rdt update does not call perform_update when user declines."""
+    from rdt.cli.main import app
+    from typer.testing import CliRunner
+
+    runner = CliRunner()
+
+    from rdt.tui.services.update_service import UpdateResult
+
+    mock_result = UpdateResult(
+        available=True,
+        local_version="1.0.2",
+        remote_version="1.1.0",
+        error=None,
+    )
+
+    with patch("rdt.cli.main.UpdateService") as MockService:
+        instance = MockService.return_value
+        instance.check_for_update.return_value = mock_result
+        # Simulate user typing "n" at the prompt
+        result = runner.invoke(app, ["update"], input="n\n")
+
+    assert result.exit_code == 0
+    instance.perform_update.assert_not_called()
+

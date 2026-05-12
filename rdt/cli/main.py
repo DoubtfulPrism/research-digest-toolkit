@@ -1,6 +1,8 @@
 import typer
 from pathlib import Path
 
+from rdt.tui.services.update_service import UpdateService
+
 # Initialize Typer app
 app = typer.Typer(help="Research Digest Toolkit (RDT) CLI")
 
@@ -43,5 +45,45 @@ def tui():
         typer.secho(f"TUI failed to launch: {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
 
+@app.command()
+def update(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation and update immediately"),
+):
+    """Check for updates and upgrade RDT to the latest version."""
+    service = UpdateService()
+    typer.echo("Checking for updates…")
+    result = service.check_for_update()
+
+    if result.error:
+        typer.secho(f"Could not check for updates: {result.error}", fg=typer.colors.YELLOW)
+        raise typer.Exit(code=0)
+
+    if not result.available:
+        typer.secho(
+            f"✅ You're on the latest version (v{result.local_version}).",
+            fg=typer.colors.GREEN,
+        )
+        raise typer.Exit(code=0)
+
+    typer.echo(f"Update available: v{result.local_version} → v{result.remote_version}")
+
+    if not yes:
+        if not typer.confirm("Do you want to update now?"):
+            typer.echo("Update skipped.")
+            raise typer.Exit(code=0)
+
+    typer.echo("Updating…")
+    outcome = service.perform_update()
+
+    if outcome.success:
+        typer.secho(
+            f"✅ Updated via {outcome.method}! Restart RDT to use the new version.",
+            fg=typer.colors.GREEN,
+        )
+    else:
+        typer.secho(f"❌ Update failed: {outcome.error}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
 if __name__ == "__main__":
     app()
+

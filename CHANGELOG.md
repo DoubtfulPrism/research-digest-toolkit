@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.3] - 2026-05-12
+
+### Added
+- **Self-update mechanism** — The TUI now checks for updates on launch (throttled to once every 24 hours).
+- **Update prompt modal** — A new modal screen notifies the user when an update is available and offers an "Update Now" option.
+- **`rdt update` command** — Added a standalone CLI command to check for and apply updates manually.
+- **Install method detection** — The toolkit automatically detects if it was installed via `uv` or `pipx` and uses the appropriate upgrade command.
+
+### Changed
+- Version bumped to `1.0.3`.
+
+---
+
 ## [1.0.2] - 2026-05-12
 
 ### Fixed

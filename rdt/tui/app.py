@@ -18,6 +18,7 @@ from .screens import (
 from .services import ConfigService, DataService
 from .services.runner_service import RunnerService
 from .services.scheduler_service import SchedulerService
+from .services.update_service import UpdateService
 
 _DEFAULT_CONFIG_PATH = Path("research_config.yaml")
 _DEFAULT_DB_PATH = Path("research_digest_state.db")
@@ -40,6 +41,7 @@ class ResearchDigestApp(App):
         self.data_service = DataService(db_path or _DEFAULT_DB_PATH)
         self.runner_service = RunnerService(config_path or _DEFAULT_CONFIG_PATH)
         self.scheduler_service = SchedulerService(self.config_service)
+        self.update_service = UpdateService()
 
     CSS_PATH = [
         Path(__file__).parent / "app.tcss",
@@ -50,6 +52,7 @@ class ResearchDigestApp(App):
         Path(__file__).parent / "screens" / "history.tcss",
         Path(__file__).parent / "screens" / "scheduler.tcss",
         Path(__file__).parent / "screens" / "converter.tcss",
+        Path(__file__).parent / "screens" / "update_prompt.tcss",
     ]
 
     BINDINGS = [
@@ -76,6 +79,25 @@ class ResearchDigestApp(App):
     def on_mount(self) -> None:
         """Mount the app and push the dashboard screen."""
         self.push_screen("dashboard")
+        # Non-blocking update check in background
+        self.run_worker(self._check_for_update, thread=True)
+
+    def _check_for_update(self) -> None:
+        """Background worker: check GitHub for a newer version."""
+        if not self.update_service.should_check():
+            return
+        result = self.update_service.check_for_update()
+        self.update_service.record_check()
+        if result.available and result.remote_version:
+            from .screens.update_prompt import UpdatePrompt
+
+            self.call_from_thread(
+                self.push_screen,
+                UpdatePrompt(
+                    local_version=result.local_version,
+                    remote_version=result.remote_version,
+                ),
+            )
 
     def action_show_dashboard(self) -> None:
         """Navigate to Dashboard screen."""

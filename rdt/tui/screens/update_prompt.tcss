@@ -1,0 +1,36 @@
+/* Update prompt modal styles */
+
+UpdatePrompt {
+    align: center middle;
+}
+
+#update-dialog {
+    width: 60;
+    height: auto;
+    max-height: 14;
+    padding: 1 2;
+    background: $surface;
+    border: tall $primary;
+}
+
+#update-title {
+    text-align: center;
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 1;
+}
+
+#update-description {
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#update-buttons {
+    align: center middle;
+    height: 3;
+    width: 100%;
+}
+
+#update-buttons Button {
+    margin: 0 1;
+}
