@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-digest-toolkit"
-version = "1.0.3"
+version = "1.1.0"
 description = "Automated research aggregation TUI for software leadership and academic research"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -58,7 +58,6 @@ dev = [
 ]
 
 [project.scripts]
-Research_Toolkit = "research_digest_tui.cli:main"
 rdt = "rdt.cli.main:app"
 
 [project.urls]
@@ -68,21 +67,7 @@ Issues = "https://github.com/DoubtfulPrism/research-digest-toolkit/issues"
 
 [tool.hatch.build.targets.wheel]
 # Named packages auto-include all their files (including .tcss stylesheets)
-packages = ["research_digest_tui", "scrapers", "rdt"]
-# Top-level runtime modules included for dev-fallback in RunnerService
-include = [
-    "config_models.py",
-    "scheduler_utils.py",
-    "rich_utils.py",
-    "credentials.py",
-    "database.py",
-    "db_init.py",
-    "retry_utils.py",
-    "utils.py",
-    "http_client.py",
-    "analysis.py",
-    "research_digest.py",
-]
+packages = ["scrapers", "rdt"]
 
 [tool.black]
 line-length = 88

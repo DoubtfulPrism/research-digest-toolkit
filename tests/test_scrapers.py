@@ -382,7 +382,7 @@ class TestHNScraperRun:
     def test_run_processes_new_story(
         self, mock_exists, mock_add, mock_save, mock_sleep, tmp_path
     ):
-        from config_models import HNConfig
+        from rdt.shared.config_models import HNConfig
         from scrapers.hn_scraper import HNScraper
 
         scraper = HNScraper(verbose=False)
@@ -405,7 +405,7 @@ class TestHNScraperRun:
     def test_run_skips_already_processed_story(
         self, mock_exists, mock_add, mock_save, mock_sleep, tmp_path
     ):
-        from config_models import HNConfig
+        from rdt.shared.config_models import HNConfig
         from scrapers.hn_scraper import HNScraper
 
         scraper = HNScraper(verbose=False)
@@ -426,7 +426,7 @@ class TestHNScraperRun:
     def test_run_skips_story_below_min_comments(
         self, mock_exists, mock_add, mock_save, mock_sleep, tmp_path
     ):
-        from config_models import HNConfig
+        from rdt.shared.config_models import HNConfig
         from scrapers.hn_scraper import HNScraper
 
         scraper = HNScraper(verbose=False)
@@ -447,7 +447,7 @@ class TestHNScraperRun:
     def test_run_handles_search_error_gracefully(
         self, mock_exists, mock_add, mock_save, mock_sleep, tmp_path
     ):
-        from config_models import HNConfig
+        from rdt.shared.config_models import HNConfig
         from scrapers.hn_scraper import HNScraper
 
         scraper = HNScraper(verbose=False)
@@ -468,7 +468,7 @@ class TestHNScraperRun:
     def test_run_empty_search_topics_processes_nothing(
         self, mock_exists, mock_add, mock_save, mock_sleep, tmp_path
     ):
-        from config_models import HNConfig
+        from rdt.shared.config_models import HNConfig
         from scrapers.hn_scraper import HNScraper
 
         scraper = HNScraper(verbose=False)
@@ -488,7 +488,7 @@ class TestHNScraperRun:
     def test_run_story_with_kids_fetches_comments(
         self, mock_exists, mock_add, mock_save, mock_sleep, tmp_path
     ):
-        from config_models import HNConfig
+        from rdt.shared.config_models import HNConfig
         from scrapers.hn_scraper import HNScraper
 
         scraper = HNScraper(verbose=False)
@@ -547,7 +547,7 @@ class TestRedditScraperRun:
         mock_sleep,
         tmp_path,
     ):
-        from config_models import RedditConfig, RedditSubreddit
+        from rdt.shared.config_models import RedditConfig, RedditSubreddit
         from scrapers.reddit_scraper import RedditScraper
 
         mock_fetch_sub.return_value = [self._make_post()]
@@ -577,7 +577,7 @@ class TestRedditScraperRun:
         mock_sleep,
         tmp_path,
     ):
-        from config_models import RedditConfig, RedditSubreddit
+        from rdt.shared.config_models import RedditConfig, RedditSubreddit
         from scrapers.reddit_scraper import RedditScraper
 
         mock_fetch_sub.return_value = [self._make_post()]
@@ -606,7 +606,7 @@ class TestRedditScraperRun:
         mock_sleep,
         tmp_path,
     ):
-        from config_models import RedditConfig, RedditSubreddit
+        from rdt.shared.config_models import RedditConfig, RedditSubreddit
         from scrapers.reddit_scraper import RedditScraper
 
         mock_fetch_sub.return_value = [self._make_post(score=10)]
@@ -635,7 +635,7 @@ class TestRedditScraperRun:
         mock_sleep,
         tmp_path,
     ):
-        from config_models import RedditConfig, RedditSubreddit
+        from rdt.shared.config_models import RedditConfig, RedditSubreddit
         from scrapers.reddit_scraper import RedditScraper
 
         mock_fetch_sub.side_effect = Exception("Rate limited")
@@ -651,7 +651,7 @@ class TestRedditScraperRun:
 
     @patch("scrapers.reddit_scraper._fetch_subreddit")
     def test_run_empty_subreddits_list(self, mock_fetch_sub, tmp_path):
-        from config_models import RedditConfig
+        from rdt.shared.config_models import RedditConfig
         from scrapers.reddit_scraper import RedditScraper
 
         scraper = RedditScraper(verbose=False)
@@ -676,7 +676,7 @@ class TestRedditScraperRun:
         mock_sleep,
         tmp_path,
     ):
-        from config_models import RedditConfig, RedditSubreddit
+        from rdt.shared.config_models import RedditConfig, RedditSubreddit
         from scrapers.reddit_scraper import RedditScraper
 
         # Post with no id field
@@ -722,7 +722,7 @@ class TestArxivScraperRun:
     def test_run_processes_new_paper(
         self, mock_search_cls, mock_exists, mock_add, mock_save, tmp_path
     ):
-        from config_models import ArxivConfig
+        from rdt.shared.config_models import ArxivConfig
         from scrapers.arxiv_scraper import ArxivScraper
 
         paper = self._make_paper()
@@ -746,7 +746,7 @@ class TestArxivScraperRun:
     def test_run_skips_already_processed_paper(
         self, mock_search_cls, mock_exists, mock_add, mock_save, tmp_path
     ):
-        from config_models import ArxivConfig
+        from rdt.shared.config_models import ArxivConfig
         from scrapers.arxiv_scraper import ArxivScraper
 
         paper = self._make_paper()
@@ -769,7 +769,7 @@ class TestArxivScraperRun:
     def test_run_stops_at_papers_outside_time_window(
         self, mock_search_cls, mock_exists, mock_add, mock_save, tmp_path
     ):
-        from config_models import ArxivConfig
+        from rdt.shared.config_models import ArxivConfig
         from scrapers.arxiv_scraper import ArxivScraper
 
         old_paper = self._make_paper(entry_id="http://arxiv.org/abs/old", days_old=10)
@@ -790,7 +790,7 @@ class TestArxivScraperRun:
     def test_run_handles_search_error_gracefully(
         self, mock_search_cls, mock_exists, mock_add, mock_save, tmp_path
     ):
-        from config_models import ArxivConfig
+        from rdt.shared.config_models import ArxivConfig
         from scrapers.arxiv_scraper import ArxivScraper
 
         mock_search_cls.side_effect = Exception("API timeout")
@@ -804,7 +804,7 @@ class TestArxivScraperRun:
 
     @patch("scrapers.arxiv_scraper.arxiv.Search")
     def test_run_empty_queries_processes_nothing(self, mock_search_cls, tmp_path):
-        from config_models import ArxivConfig
+        from rdt.shared.config_models import ArxivConfig
         from scrapers.arxiv_scraper import ArxivScraper
 
         scraper = ArxivScraper(verbose=False)

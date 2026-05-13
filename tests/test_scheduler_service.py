@@ -36,8 +36,8 @@ def test_get_schedule_string_returns_config_value(tmp_path):
         {"schedule": {"schedule_string": "every day at 06:00", "enabled": False}},
     )
 
-    from research_digest_tui.services.config_service import ConfigService
-    from research_digest_tui.services.scheduler_service import SchedulerService
+    from rdt.tui.services.config_service import ConfigService
+    from rdt.tui.services.scheduler_service import SchedulerService
 
     svc = SchedulerService(ConfigService(config_file))
     assert svc.get_schedule_string() == "every day at 06:00"
@@ -48,8 +48,8 @@ def test_get_schedule_string_returns_none_when_not_set(tmp_path):
     """get_schedule_string returns None when no schedule is configured."""
     config_file = _write_config(tmp_path)
 
-    from research_digest_tui.services.config_service import ConfigService
-    from research_digest_tui.services.scheduler_service import SchedulerService
+    from rdt.tui.services.config_service import ConfigService
+    from rdt.tui.services.scheduler_service import SchedulerService
 
     svc = SchedulerService(ConfigService(config_file))
     assert svc.get_schedule_string() is None
@@ -61,8 +61,8 @@ def test_set_schedule_validates_before_saving(tmp_path):
     pytest.importorskip("ruamel.yaml")
     config_file = _write_config(tmp_path)
 
-    from research_digest_tui.services.config_service import ConfigService
-    from research_digest_tui.services.scheduler_service import SchedulerService
+    from rdt.tui.services.config_service import ConfigService
+    from rdt.tui.services.scheduler_service import SchedulerService
 
     config_svc = ConfigService(config_file)
     svc = SchedulerService(config_svc)
@@ -79,9 +79,9 @@ def test_set_schedule_raises_on_invalid_string(tmp_path):
     """set_schedule raises ScheduleError for invalid schedule strings."""
     config_file = _write_config(tmp_path)
 
-    from research_digest_tui.scheduler_utils import ScheduleError
-    from research_digest_tui.services.config_service import ConfigService
-    from research_digest_tui.services.scheduler_service import SchedulerService
+    from rdt.shared.scheduler_utils import ScheduleError
+    from rdt.tui.services.config_service import ConfigService
+    from rdt.tui.services.scheduler_service import SchedulerService
 
     svc = SchedulerService(ConfigService(config_file))
 
@@ -93,7 +93,7 @@ def test_set_schedule_raises_on_invalid_string(tmp_path):
 def test_validate_returns_false_for_invalid():
     """validate returns (False, error_message) for invalid schedule strings."""
 
-    from research_digest_tui.services.scheduler_service import SchedulerService
+    from rdt.tui.services.scheduler_service import SchedulerService
 
     svc = SchedulerService(MagicMock())
     valid, msg = svc.validate("every banana at 99:99")
@@ -107,7 +107,7 @@ def test_validate_returns_false_for_invalid():
 def test_validate_returns_true_for_valid():
     """validate returns (True, 'Valid') for a well-formed schedule string."""
 
-    from research_digest_tui.services.scheduler_service import SchedulerService
+    from rdt.tui.services.scheduler_service import SchedulerService
 
     svc = SchedulerService(MagicMock())
     valid, msg = svc.validate("every day at 06:00")
@@ -119,7 +119,7 @@ def test_validate_returns_true_for_valid():
 def test_set_enabled_calls_config_service(tmp_path):
     """set_enabled delegates to config_service.set_schedule_enabled."""
 
-    from research_digest_tui.services.scheduler_service import SchedulerService
+    from rdt.tui.services.scheduler_service import SchedulerService
 
     mock_config = MagicMock()
     mock_config.config.schedule.enabled = False

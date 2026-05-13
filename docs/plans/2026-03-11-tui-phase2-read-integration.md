@@ -43,7 +43,7 @@ Type: Feature
 
 - **Patterns to follow:**
   - `analysis.py:16-39` — existing Polars + SQLite pattern using `pl.read_database(query, conn)`
-  - `research_digest.py:46-66` — config loading with Pydantic validation via `ResearchDigestConfig`
+  - `rdt/digest.py:46-66` — config loading with Pydantic validation via `ResearchDigestConfig`
   - `research_digest_tui/screens/dashboard.py` — current Phase 1 screen pattern (compose → yield widgets)
   - `research_digest_tui/widgets/scraper_card.py` — reactive widget pattern with `reactive[]` properties
   - `tests/test_tui_integration.py` — async pilot tests using `app.run_test()`
@@ -60,7 +60,7 @@ Type: Feature
   - `config_models.py` — Pydantic models: `ResearchDigestConfig`, `ScrapersConfig`, `HNConfig`, `RSSConfig`, `RedditConfig`, `ArxivConfig`
   - `research_config.yaml` — YAML config with scrapers, topics, processing, output sections
   - `research_digest_state.db` — live database with scraped items across 4 sources
-  - `research_digest.py:258-263` — current TUI launch point (creates `ResearchDigestApp()` with no args)
+  - `rdt/digest.py:258-263` — current TUI launch point (creates `ResearchDigestApp()` with no args)
   - `research_digest_tui/services/config_service.py` — ConfigService (Task 1: COMPLETE)
   - `research_digest_tui/services/data_service.py` — DataService with Polars queries (Task 2: COMPLETE)
   - `tests/test_config_service.py` — ConfigService unit tests (Task 1: COMPLETE)
@@ -80,7 +80,7 @@ Type: Feature
 
 - Polars can be installed in the worktree environment — supported by `analysis.py` already using it — Tasks 2, 6, 7 depend on this
 - The `processed_items` table schema won't change during implementation — supported by `database.py` being stable since Phase 1 — Tasks 2, 6, 7 depend on this
-- Config loading via `ResearchDigestConfig` is sufficient (no need for raw YAML) — supported by `research_digest.py:46-66` — Tasks 1, 4, 5 depend on this
+- Config loading via `ResearchDigestConfig` is sufficient (no need for raw YAML) — supported by `rdt/digest.py:46-66` — Tasks 1, 4, 5 depend on this
 - Textual DataTable widget is available in v0.85.0 for the content browser — Tasks 6 depends on this
 
 ## Testing Strategy
@@ -130,7 +130,7 @@ Type: Feature
 ### Key Links
 
 - `ResearchDigestApp` creates `ConfigService` and `DataService` → screens access via `self.app`
-- `research_digest.py` passes `config_path` to `ResearchDigestApp` constructor
+- `rdt/digest.py` passes `config_path` to `ResearchDigestApp` constructor
 - `ConfigService` loads `research_config.yaml` → returns `ResearchDigestConfig` Pydantic model
 - `DataService` queries `research_digest_state.db` via Polars → returns DataFrames and dicts
 - Dashboard `on_mount()` → reads services → populates ScraperCards dynamically
@@ -163,7 +163,7 @@ Type: Feature
 - Create: `tests/test_tui_services.py`
 
 **Key Decisions / Notes:**
-- Reuse `config_models.ResearchDigestConfig` for Pydantic validation (same as `research_digest.py:46-66`)
+- Reuse `config_models.ResearchDigestConfig` for Pydantic validation (same as `rdt/digest.py:46-66`)
 - Provide `get_scraper_configs()` → list of dicts with `name`, `enabled`, `config_summary` (human-readable settings string)
 - Provide source name mapping: config key → DB source name (e.g., `"hackernews"` → `"hn"`, `"rss"` → `"rss"`, `"reddit"` → `"reddit"`, `"arxiv"` → `"arxiv"`)
 - Handle missing config file gracefully — return defaults
@@ -227,7 +227,7 @@ Type: Feature
 **Files:**
 - Modify: `research_digest_tui/app.py`
 - Modify: `research_digest_tui/__init__.py` (update exports if needed)
-- Modify: `research_digest.py` (pass config_path to App)
+- Modify: `rdt/digest.py` (pass config_path to App)
 - Modify: `tests/test_tui_screens.py` (update App instantiation)
 - Modify: `tests/test_tui_integration.py` (update App instantiation)
 
@@ -237,12 +237,12 @@ Type: Feature
 - Defaults: `config_path` = `Path("research_config.yaml")`, `db_path` = `Path("research_digest_state.db")`
 - Services created in `__init__`: `self.config_service = ConfigService(config_path)` and `self.data_service = DataService(db_path)`
 - Screens access via `self.app.config_service` and `self.app.data_service`
-- Update `research_digest.py:258-262` to pass config path: `ResearchDigestApp(config_path=Path(config))`
+- Update `rdt/digest.py:258-262` to pass config path: `ResearchDigestApp(config_path=Path(config))`
 - Existing tests that instantiate `ResearchDigestApp()` must still work (default paths)
 
 **Definition of Done:**
 - [ ] App creates ConfigService and DataService on init
-- [ ] `research_digest.py` passes config_path to App
+- [ ] `rdt/digest.py` passes config_path to App
 - [ ] Existing tests still pass with default parameters
 - [ ] Screens can access `self.app.config_service` and `self.app.data_service`
 - [ ] Test: `ResearchDigestApp()` with no args still works (has config_service and data_service)

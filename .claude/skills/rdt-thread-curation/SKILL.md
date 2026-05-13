@@ -344,7 +344,7 @@ TODAY=$(date +%Y-%m-%d)
 mv notebooklm_sources_threads/*.md research_digest/$TODAY/obsidian/
 
 # Run main digest
-./research_digest.py
+./rdt/digest.py
 
 echo "Weekly digest + threads complete!"
 echo "Check: research_digest/$TODAY/"

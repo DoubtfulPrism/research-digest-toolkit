@@ -5,8 +5,8 @@ import pytest
 
 pytest.importorskip("textual")
 
-from research_digest_tui import ResearchDigestApp  # noqa: E402
-from research_digest_tui.screens import (  # noqa: E402
+from rdt.tui import ResearchDigestApp  # noqa: E402
+from rdt.tui.screens import (  # noqa: E402
     Configuration,
     Dashboard,
     History,
@@ -66,7 +66,7 @@ def test_app_has_keyboard_bindings():
 @pytest.mark.unit
 def test_app_has_config_service_and_data_service():
     """App exposes config_service and data_service after init."""
-    from research_digest_tui.services import ConfigService, DataService
+    from rdt.tui.services import ConfigService, DataService
 
     app = ResearchDigestApp()
     assert hasattr(app, "config_service")

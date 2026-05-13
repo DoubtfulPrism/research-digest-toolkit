@@ -1,0 +1,7 @@
+backlog[id, description, status, priority]:
+10, "Update ResearchDigestConfig with typed topics and processing models", "DONE", "HIGH"
+11, "Enhance ConfigService with methods for all YAML sections", "DONE", "HIGH"
+12, "Refactor Configuration TUI screen to use tabs for missing sections", "DONE", "MEDIUM"
+13, "Fix destructive Reddit/ArXiv configuration saves in TUI", "DONE", "HIGH"
+14, "Integrate YAML topics into obsidian.py auto-tagging logic", "DONE", "MEDIUM"
+15, "Add TDD tests for configuration round-trip safety", "DONE", "HIGH"

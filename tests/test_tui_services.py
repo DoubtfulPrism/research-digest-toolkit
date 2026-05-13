@@ -30,7 +30,7 @@ def test_config_service_loads_valid_yaml(tmp_path):
     config_file = tmp_path / "test_config.yaml"
     config_file.write_text(yaml.dump(config_data))
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     service = ConfigService(config_file)
     config = service.get_config()
@@ -41,7 +41,7 @@ def test_config_service_loads_valid_yaml(tmp_path):
 @pytest.mark.unit
 def test_config_service_missing_file_returns_default(tmp_path):
     """ConfigService returns default config when file is missing."""
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     service = ConfigService(tmp_path / "nonexistent.yaml")
     config = service.get_config()
@@ -82,7 +82,7 @@ def test_config_service_get_scraper_configs(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config_data))
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     service = ConfigService(config_file)
     configs = service.get_scraper_configs()
@@ -122,7 +122,7 @@ def test_config_service_source_name_mapping(tmp_path):
         )
     )
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     service = ConfigService(config_file)
     mapping = service.get_source_name_mapping()
@@ -156,7 +156,7 @@ def test_config_service_scraper_config_summary_includes_key_settings(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config_data))
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     service = ConfigService(config_file)
     configs = service.get_scraper_configs()
@@ -208,7 +208,7 @@ def test_data_service_get_item_counts_by_source(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     counts = service.get_item_counts_by_source()
@@ -225,7 +225,7 @@ def test_data_service_get_item_counts_empty_db(tmp_path):
     db_path = tmp_path / "test.db"
     _create_test_db(db_path, [])
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     counts = service.get_item_counts_by_source()
@@ -236,7 +236,7 @@ def test_data_service_get_item_counts_empty_db(tmp_path):
 @pytest.mark.unit
 def test_data_service_missing_db_returns_empty(tmp_path):
     """DataService returns empty results when database file is missing."""
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(tmp_path / "nonexistent.db")
     assert service.get_item_counts_by_source() == {}
@@ -259,7 +259,7 @@ def test_data_service_get_items_timeline_returns_list(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     timeline = service.get_items_timeline(limit=10)
@@ -283,7 +283,7 @@ def test_data_service_get_items_timeline_rejects_invalid_source(tmp_path):
     db_path = tmp_path / "test.db"
     _create_test_db(db_path, [("hn", "url1", "2026-01-01T10:00:00")])
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     result = service.get_items_timeline(
@@ -305,7 +305,7 @@ def test_data_service_get_items_timeline_source_filter(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     hn_items = service.get_items_timeline(source_filter="hn")
@@ -326,7 +326,7 @@ def test_data_service_get_daily_counts(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     daily = service.get_daily_counts(days=30)
@@ -351,7 +351,7 @@ def test_data_service_get_summary_stats(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     stats = service.get_summary_stats()
@@ -375,7 +375,7 @@ def test_data_service_get_summary_stats_with_days_filter(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     # Filter to last 7 days — none of those items should be included
@@ -396,7 +396,7 @@ def test_data_service_get_source_distribution(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     distribution = service.get_source_distribution()
@@ -424,7 +424,7 @@ def test_data_service_get_source_distribution_with_days_filter(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     distribution = service.get_source_distribution(days=7)
@@ -444,7 +444,7 @@ def test_data_service_get_last_run_per_source(tmp_path):
         ],
     )
 
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(db_path)
     last_runs = service.get_last_run_per_source()
@@ -457,7 +457,7 @@ def test_data_service_get_last_run_per_source(tmp_path):
 @pytest.mark.unit
 def test_data_service_get_last_run_per_source_missing_db(tmp_path):
     """get_last_run_per_source returns empty dict when database is missing."""
-    from research_digest_tui.services.data_service import DataService
+    from rdt.tui.services.data_service import DataService
 
     service = DataService(tmp_path / "nonexistent.db")
     assert service.get_last_run_per_source() == {}
@@ -480,7 +480,7 @@ def test_config_service_save_preserves_yaml_comments(tmp_path):
     pytest.importorskip("ruamel.yaml")
     config_file = _yaml_with_comments(tmp_path)
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     svc = ConfigService(config_file)
     # Trigger a write
@@ -510,7 +510,7 @@ def test_set_scraper_enabled_writes_and_reloads(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config_data))
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     svc = ConfigService(config_file)
     assert svc.get_scraper_config("hackernews").enabled is False
@@ -534,7 +534,7 @@ def test_add_rss_feed_appends_to_yaml(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config_data))
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     svc = ConfigService(config_file)
     svc.add_rss_feed(
@@ -572,7 +572,7 @@ def test_remove_rss_feed_by_index(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config_data))
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     svc = ConfigService(config_file)
     svc.remove_rss_feed(0)
@@ -590,7 +590,7 @@ def test_reload_clears_both_raw_and_pydantic_caches(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump({"days_back": 7, "scrapers": {}}))
 
-    from research_digest_tui.services.config_service import ConfigService
+    from rdt.tui.services.config_service import ConfigService
 
     svc = ConfigService(config_file)
     _ = svc.config  # populate _config

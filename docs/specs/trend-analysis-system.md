@@ -99,7 +99,7 @@ trend_analysis:
 
 ```bash
 # Run analysis on latest digest
-./research_digest.py --analyze-trends
+./rdt/digest.py --analyze-trends
 
 # Run analysis on specific date range
 ./trend_analysis.py --start 2026-01-01 --end 2026-02-21

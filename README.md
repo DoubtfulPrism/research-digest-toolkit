@@ -17,7 +17,7 @@ A complete toolkit for automating research content discovery, aggregation, and o
 
 **Single-command research digest:**
 ```bash
-./research_digest.py
+./rdt/digest.py
 ```
 
 Automatically discovers, scrapes, and organizes content from:
@@ -73,7 +73,7 @@ The toolkit is composed of a central orchestrator, a set of scraper plugins, and
 ### Orchestration
 | Tool | Purpose |
 |------|---------|
-| `research_digest.py` | Runs the entire pipeline by loading and executing enabled scraper plugins. |
+| `rdt/digest.py` | Runs the entire pipeline by loading and executing enabled scraper plugins. |
 
 ### Scraper Plugins (in `scrapers/` directory)
 | Plugin | Source | Purpose |
@@ -139,7 +139,7 @@ The tool now includes a built-in scheduler. You can run the digest on a schedule
 
 ```bash
 # Weekly digest every Monday at 9 AM
-./research_digest.py --schedule "every().monday.at('09:00')"
+./rdt/digest.py --schedule "every().monday.at('09:00')"
 ```
 
 Alternatively, you can use a cron job for more advanced scheduling needs.
@@ -148,7 +148,7 @@ Alternatively, you can use a cron job for more advanced scheduling needs.
 crontab -e
 
 # Add this line:
-0 9 * * 1 cd /path/to/Scripts && ./research_digest.py --run-once
+0 9 * * 1 cd /path/to/Scripts && ./rdt/digest.py --run-once
 ```
 
 ---
@@ -192,7 +192,7 @@ crontab -e
 **Monday Morning (Automated):**
 ```bash
 # Cron runs automatically
-./research_digest.py
+./rdt/digest.py
 
 # Outputs to:
 research_digest/2024-12-17/
@@ -229,7 +229,7 @@ cp -r research_digest/$(date +%Y-%m-%d)/obsidian/* \
 ### Pipeline
 
 ```
-1. Discovery & Execution (research_digest.py)
+1. Discovery & Execution (rdt/digest.py)
    ├─ Loads `research_config.yaml`
    ├─ Discovers scraper plugins in `scrapers/`
    └─ Runs enabled plugins in sequence
@@ -240,7 +240,7 @@ cp -r research_digest/$(date +%Y-%m-%d)/obsidian/* \
    ├─ If new, saves raw content to `research_digest/DATE/raw/`
    └─ Adds new item's ID to the database.
 
-3. Processing (research_digest.py)
+3. Processing (rdt/digest.py)
    ├─ Document Conversion (optional, uses native tools)
    ├─ Obsidian Formatting (`obsidian_prep.py`)
    └─ File Splitting (`file_splitter.py`)

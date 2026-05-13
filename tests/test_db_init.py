@@ -23,7 +23,7 @@ class TestInitTopicsAndKeywords:
     """Tests for init_topics_and_keywords()."""
 
     def test_creates_topics_and_keywords_in_db(self, tmp_path):
-        from db_init import init_topics_and_keywords
+        from rdt.shared.db_init import init_topics_and_keywords
 
         config_path = _write_config(
             tmp_path, topics={"AI": ["machine learning", "llm"]}
@@ -42,7 +42,7 @@ class TestInitTopicsAndKeywords:
         assert ("llm",) in keywords
 
     def test_handles_empty_topics_config(self, tmp_path, capsys):
-        from db_init import init_topics_and_keywords
+        from rdt.shared.db_init import init_topics_and_keywords
 
         config_path = _write_config(tmp_path, topics={})
         db_path = str(tmp_path / "test.db")
@@ -51,7 +51,7 @@ class TestInitTopicsAndKeywords:
         # Should not raise — prints warning about no topics
 
     def test_handles_missing_topics_key(self, tmp_path):
-        from db_init import init_topics_and_keywords
+        from rdt.shared.db_init import init_topics_and_keywords
 
         config_path = _write_config(tmp_path, topics=None)  # no topics key
         db_path = str(tmp_path / "test.db")
@@ -63,14 +63,14 @@ class TestInitTopicsAndKeywords:
         """Non-existent config file raises click Exit (typer.Exit wraps click)."""
         import click
 
-        from db_init import init_topics_and_keywords
+        from rdt.shared.db_init import init_topics_and_keywords
 
         with pytest.raises((click.exceptions.Exit, SystemExit)):
             init_topics_and_keywords("/nonexistent/config.yaml", str(tmp_path / "db"))
 
     def test_idempotent_insert(self, tmp_path):
         """Calling twice with same data doesn't raise."""
-        from db_init import init_topics_and_keywords
+        from rdt.shared.db_init import init_topics_and_keywords
 
         config_path = _write_config(tmp_path, topics={"AI": ["ml"]})
         db_path = str(tmp_path / "test.db")

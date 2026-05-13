@@ -58,7 +58,7 @@ test_no_datetime_deprecation_warning PASSED
 $ ls -lh rich_utils.py
 -rw------- 4.5K Jan 7 rich_utils.py
 
-$ head -20 research_digest.py | grep "import.*rich"
+$ head -20 rdt/digest.py | grep "import.*rich"
 from rich_utils import (
     create_summary_table,
     get_console,
@@ -101,10 +101,10 @@ $ grep -n "def retry_api_call" retry_utils.py
 
 **Verification:**
 ```bash
-$ head -20 research_digest.py | grep "import typer"
+$ head -20 rdt/digest.py | grep "import typer"
 import typer
 
-$ grep -n "app = typer.Typer" research_digest.py
+$ grep -n "app = typer.Typer" rdt/digest.py
 37:app = typer.Typer(help="Automated research aggregation pipeline.")
 ```
 
@@ -210,7 +210,7 @@ $ ls -lh scheduler_utils.py
 $ grep -n "class ScheduleError" scheduler_utils.py
 18:class ScheduleError(ValueError):
 
-$ grep "eval\|exec" research_digest.py
+$ grep "eval\|exec" rdt/digest.py
 # No results - eval() removed
 ```
 
@@ -285,7 +285,7 @@ scrapers/rss_scraper.py
 
 ✅ **Dynamic loading in orchestrator**
 ```python
-# research_digest.py:72-90
+# rdt/digest.py:72-90
 def _discover_plugins(self) -> list:
     for _, name, _ in pkgutil.iter_modules(scrapers.__path__):
         module = importlib.import_module(f"scrapers.{name}")
@@ -307,7 +307,7 @@ def _discover_plugins(self) -> list:
 - ✅ `http_client.py` - HTTPX + DiskCache
 - ✅ `config_models.py` - Pydantic validation
 - ✅ `scheduler_utils.py` - Secure scheduling
-- ✅ `research_digest.py` - Typer migration, plugin loading
+- ✅ `rdt/digest.py` - Typer migration, plugin loading
 - ✅ `scrapers/base.py` - Plugin architecture
 - ✅ `scrapers/*_scraper.py` - 4 scraper implementations
 - ✅ `tests/` - 151 passing tests

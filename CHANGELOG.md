@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   broke fresh installs.
 - Removed legacy `pip install -r requirements.txt` instructions from Quick Start.
 - Updated run commands throughout README to use `rdt tui` / `rdt convert`
-  instead of `./research_digest.py` and `python -m research_digest_tui`.
+  instead of `./rdt/digest.py` and `python -m research_digest_tui`.
 
 ### Changed
 - Version bumped to `1.0.2`.

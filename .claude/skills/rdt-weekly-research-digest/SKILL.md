@@ -64,16 +64,16 @@ topics:
 
 **One-time run:**
 ```bash
-./research_digest.py
+./rdt/digest.py
 ```
 
 **Scheduled run (built-in scheduler):**
 ```bash
 # Weekly digest every Monday at 9 AM
-./research_digest.py --schedule "every().monday.at('09:00')"
+./rdt/digest.py --schedule "every().monday.at('09:00')"
 
 # Every 4 hours
-./research_digest.py --schedule "every(4).hours"
+./rdt/digest.py --schedule "every(4).hours"
 ```
 
 **Alternative: Cron job**
@@ -82,7 +82,7 @@ topics:
 crontab -e
 
 # Add weekly digest (Mondays at 9 AM)
-0 9 * * 1 cd /home/doug/Documents/AIProjectWork/Scripts && ./research_digest.py --run-once
+0 9 * * 1 cd /home/doug/Documents/AIProjectWork/Scripts && ./rdt/digest.py --run-once
 ```
 
 **Output structure:**
@@ -207,7 +207,7 @@ mv notebooklm_sources_threads/*.md research_digest/$(date +%Y-%m-%d)/obsidian/
 
 1. **Digest runs successfully:**
    ```bash
-   ./research_digest.py
+   ./rdt/digest.py
    # Check for "Found plugin: ..." messages
    # No errors in console
    ```
@@ -258,7 +258,7 @@ mv notebooklm_sources_threads/*.md research_digest/$(date +%Y-%m-%d)/obsidian/
 # weekly_digest.sh
 
 # Run digest
-./research_digest.py
+./rdt/digest.py
 
 # Get today's folder
 TODAY=$(date +%Y-%m-%d)
@@ -285,7 +285,7 @@ chmod +x weekly_digest.sh
 ## Example Workflow Timeline
 
 **Monday 9:00 AM** (automated)
-- Cron triggers `./research_digest.py`
+- Cron triggers `./rdt/digest.py`
 - Scrapes HN, RSS, Reddit, arXiv
 - Generates formatted output
 

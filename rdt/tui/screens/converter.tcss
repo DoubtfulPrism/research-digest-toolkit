@@ -1,43 +1,58 @@
-ConverterScreen {
-    align: center middle;
+#workspace_container {
+    height: 1fr;
+    padding: 0 1;
 }
 
-.main-container {
-    width: 80%;
-    height: 80%;
-    border: solid green;
+#left_pane {
+    width: 30%;
+    border-right: tall $primary;
+    padding: 1;
+}
+
+#center_pane {
+    width: 40%;
     padding: 1 2;
+    border-right: tall $primary;
 }
 
-.header-title {
+#right_pane {
+    width: 30%;
+    padding: 1;
+}
+
+.pane-title {
     text-align: center;
     text-style: bold;
-    padding-bottom: 2;
-}
-
-.input-row {
-    height: 3;
-    align: left middle;
+    background: $primary-darken-1;
+    color: white;
     margin-bottom: 1;
 }
 
-.input-row Static {
-    width: 20%;
-    text-align: right;
-    padding-right: 1;
-}
-
-.input-row Input, .input-row Select {
-    width: 80%;
-}
-
-Button#process_btn {
-    width: 100%;
-    margin-top: 2;
+.settings-group {
+    height: auto;
     margin-bottom: 2;
+}
+
+.label {
+    text-style: bold;
+    margin-top: 1;
+    color: $accent;
+}
+
+Input {
+    margin-bottom: 1;
+}
+
+Select {
+    margin-bottom: 1;
+}
+
+#process_btn {
+    width: 100%;
 }
 
 .log-view {
     height: 1fr;
-    border: solid panel;
+    border: solid $primary;
+    background: $surface;
 }

@@ -318,7 +318,7 @@ scrapers:
   # ... other scrapers
 ```
 
-That's it! The `research_digest.py` script will automatically discover and run your new plugin.
+That's it! The `rdt/digest.py` script will automatically discover and run your new plugin.
 
 ## 🔐 Security
 

@@ -1,0 +1,14 @@
+project[name, status, target_version, locale]:
+RDT, "REFACTORING", "1.1.0", "UK_ENGLISH"
+
+dependencies[name, status, type]:
+pdftotext, "CHECK_REQUIRED", "EXTERNAL"
+pandoc, "CHECK_REQUIRED", "EXTERNAL"
+textual, "INSTALLED", "PYTHON"
+typer, "INSTALLED", "PYTHON"
+
+architecture[module, responsibility]:
+rdt.core, "Document processing and conversion logic"
+rdt.tui, "Textual TUI screens and widgets"
+rdt.cli, "Typer-based command line interface"
+rdt.adapters, "Obsidian/Substack formatting logic"

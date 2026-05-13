@@ -15,7 +15,7 @@ Pattern established here will be replicated for other scrapers.
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
@@ -23,8 +23,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
-import database
-from config_models import RSSConfig, RSSFeed
+from rdt.shared import database
+from rdt.shared.config_models import RSSConfig, RSSFeed
 from scrapers.rss_scraper import (
     RSSScraper,
     _fetch_feed,
@@ -40,7 +40,7 @@ from scrapers.rss_scraper import (
 @pytest.fixture
 def mock_feed_entry():
     """Create a mock RSS feed entry with complete data."""
-    entry = Mock()
+    entry = MagicMock()
     entry.title = "Test Article Title"
     entry.link = "https://example.com/article-123"
     entry.author = "Test Author"
@@ -70,7 +70,7 @@ def mock_feed_entry():
 @pytest.fixture
 def mock_feed_minimal():
     """Create a mock RSS feed entry with minimal data."""
-    entry = Mock()
+    entry = MagicMock()
     entry.title = "Minimal Entry"
     entry.link = "https://example.com/minimal"
     entry.summary = "Basic summary"
@@ -97,7 +97,7 @@ def mock_feed_minimal():
 @pytest.fixture
 def mock_feed_old():
     """Create a mock RSS feed entry from 30 days ago."""
-    entry = Mock()
+    entry = MagicMock()
     entry.title = "Old Article"
     entry.link = "https://example.com/old-article"
 
@@ -121,7 +121,7 @@ def mock_feed_old():
 @pytest.fixture
 def mock_feedparser_response(mock_feed_entry):
     """Create a mock feedparser response object."""
-    feed = Mock()
+    feed = MagicMock()
     feed.bozo = False  # No parsing errors
     feed.entries = [mock_feed_entry]
     feed.feed = {"title": "Test Feed"}
@@ -156,7 +156,7 @@ class TestFetchFeed:
         """Test handling of feed parsing errors."""
         # Arrange
         httpx_mock.add_response(content=b"")
-        bad_feed = Mock()
+        bad_feed = MagicMock()
         bad_feed.bozo = True  # Parsing error
         bad_feed.entries = []  # No entries
         client = httpx.Client()
@@ -178,9 +178,9 @@ class TestFetchFeed:
         """Test that feeds with bozo=True but valid entries still work."""
         # Arrange - Some feeds have minor issues but still have entries
         httpx_mock.add_response(content=b"")
-        feed = Mock()
+        feed = MagicMock()
         feed.bozo = True  # Has parsing warnings
-        feed.entries = [Mock()]  # But has valid entries
+        feed.entries = [MagicMock()]  # But has valid entries
         client = httpx.Client()
 
         with patch("feedparser.parse", return_value=feed):
@@ -237,7 +237,7 @@ class TestFilterEntriesByDate:
     def test_filter_entry_without_date(self):
         """Test entries without date are included (assumed recent)."""
         # Arrange
-        entry_no_date = Mock()
+        entry_no_date = MagicMock()
         entry_no_date.title = "No Date Entry"
         delattr(entry_no_date, "published_parsed")
         delattr(entry_no_date, "updated_parsed")
@@ -254,7 +254,7 @@ class TestFilterEntriesByDate:
     def test_filter_uses_updated_date_fallback(self):
         """Test that updated_parsed is used if published_parsed is missing."""
         # Arrange
-        entry = Mock()
+        entry = MagicMock()
         entry.title = "Updated Entry"
         delattr(entry, "published_parsed")
 
@@ -311,7 +311,7 @@ class TestFormatEntry:
     def test_format_entry_strips_html_from_content(self):
         """Test that HTML tags are removed from content."""
         # Arrange
-        entry = Mock()
+        entry = MagicMock()
         entry.title = "HTML Test"
         entry.link = "https://example.com/html"
         entry.summary = (
@@ -342,7 +342,7 @@ class TestFormatEntry:
     def test_format_entry_prefers_content_over_summary(self):
         """Test that entry.content is used if available instead of summary."""
         # Arrange
-        entry = Mock()
+        entry = MagicMock()
         entry.title = "Content Test"
         entry.link = "https://example.com/content"
         entry.summary = "This is the summary"
@@ -369,7 +369,7 @@ class TestFormatEntry:
     def test_format_entry_escapes_quotes_in_yaml(self):
         """Test that quotes in titles/authors are escaped for YAML."""
         # Arrange
-        entry = Mock()
+        entry = MagicMock()
         entry.title = 'Article with "quotes" in title'
         entry.link = "https://example.com/quotes"
         entry.author = 'Author "Name"'
@@ -588,14 +588,14 @@ class TestRSSScraperRun:
         scraper = RSSScraper(verbose=False)
 
         # Create different feeds with different entries
-        feed1 = Mock()
+        feed1 = MagicMock()
         feed1.bozo = False
         feed1.entries = [mock_feedparser_response.entries[0]]
         feed1.feed = {"title": "Feed 1"}
 
-        feed2 = Mock()
+        feed2 = MagicMock()
         feed2.bozo = False
-        entry2 = Mock()
+        entry2 = MagicMock()
         entry2.title = "Second Entry"
         entry2.link = "https://example.com/entry-2"
         two_days_ago = datetime.now() - timedelta(days=2)
@@ -652,7 +652,7 @@ class TestRSSScraperRun:
         # Arrange
         scraper = RSSScraper(verbose=False)
 
-        feed = Mock()
+        feed = MagicMock()
         feed.bozo = False
         feed.entries = [mock_feed_old]  # Entry from 30 days ago
         feed.feed = {"title": "Test Feed"}
@@ -684,13 +684,18 @@ class TestRSSScraperRun:
         # Arrange
         scraper = RSSScraper(verbose=False)
 
-        entry_no_link = Mock()
+        entry_no_link = MagicMock()
         entry_no_link.title = "No Link Entry"
         entry_no_link.link = ""  # Empty link
-        two_days_ago = datetime.now() - timedelta(days=2)
-        entry_no_link.published_parsed = two_days_ago.timetuple()[:6]
+        
+        # Add .get() support to the mock
+        def mock_get(key, default=""):
+            if key == "link": return ""
+            if key == "title": return "No Link Entry"
+            return default
+        entry_no_link.get = mock_get
 
-        feed = Mock()
+        feed = MagicMock()
         feed.bozo = False
         feed.entries = [entry_no_link]
         feed.feed = {"title": "Test Feed"}
@@ -744,7 +749,7 @@ class TestRSSScraperEdgeCases:
     def test_format_entry_with_none_values(self):
         """Test formatting handles None values gracefully."""
         # Arrange
-        entry = Mock()
+        entry = MagicMock()
 
         def mock_get(key, default=""):
             return default  # Return default for all keys
@@ -773,7 +778,7 @@ class TestRSSScraperAuthFeeds:
 
     def _make_feed_response(self):
         """Build a minimal mock feedparser response."""
-        entry = Mock()
+        entry = MagicMock()
         entry.title = "Auth Test Entry"
         entry.link = "https://private.example.com/article"
         entry.summary = "Auth content"
@@ -793,7 +798,7 @@ class TestRSSScraperAuthFeeds:
 
         entry.get = mock_get
 
-        feed = Mock()
+        feed = MagicMock()
         feed.bozo = False
         feed.entries = [entry]
         feed.feed = {"title": "Private Feed"}
@@ -832,7 +837,7 @@ class TestRSSScraperAuthFeeds:
         self, mock_fetch, tmp_path, monkeypatch
     ):
         """Feed with auth_type='basic' triggers BasicAuth client creation."""
-        from credentials import CredentialService
+        from rdt.shared.credentials import CredentialService
 
         scraper = RSSScraper(verbose=False)
         mock_feed = self._make_feed_response()
@@ -856,7 +861,7 @@ class TestRSSScraperAuthFeeds:
         monkeypatch.setattr(database, "item_exists", lambda s, i: True)
 
         with patch("scrapers.rss_scraper.get_sync_client") as mock_get_client:
-            mock_client = Mock()
+            mock_client = MagicMock()
             mock_get_client.return_value = mock_client
 
             scraper.run(config, tmp_path, credential_service=cred_svc)
@@ -871,7 +876,7 @@ class TestRSSScraperAuthFeeds:
         self, mock_fetch, tmp_path, monkeypatch
     ):
         """Feed with auth_type='bearer' triggers bearer auth client creation."""
-        from credentials import CredentialService
+        from rdt.shared.credentials import CredentialService
 
         scraper = RSSScraper(verbose=False)
         mock_feed = self._make_feed_response()
@@ -894,7 +899,7 @@ class TestRSSScraperAuthFeeds:
         monkeypatch.setattr(database, "item_exists", lambda s, i: True)
 
         with patch("scrapers.rss_scraper.get_sync_client") as mock_get_client:
-            mock_client = Mock()
+            mock_client = MagicMock()
             mock_get_client.return_value = mock_client
 
             scraper.run(config, tmp_path, credential_service=cred_svc)

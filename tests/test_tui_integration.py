@@ -10,8 +10,8 @@ import yaml
 pytest.importorskip("textual")
 pytest.importorskip("pytest_asyncio")
 
-from research_digest_tui import ResearchDigestApp  # noqa: E402
-from research_digest_tui.widgets import ScraperCard  # noqa: E402
+from rdt.tui import ResearchDigestApp  # noqa: E402
+from rdt.tui.widgets import ScraperCard  # noqa: E402
 
 
 def _make_config(tmp_path: Path) -> Path:
@@ -596,7 +596,7 @@ async def test_scraper_run_modal_mounts_and_closes(tmp_path):
 
     from textual.widgets import Button
 
-    from research_digest_tui.screens.scraper_management import ScraperOutputModal
+    from rdt.tui.screens.scraper_management import ScraperOutputModal
 
     config_path = _make_config(tmp_path)
     db_path = tmp_path / "empty.db"

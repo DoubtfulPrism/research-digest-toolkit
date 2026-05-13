@@ -25,7 +25,7 @@ Automated research aggregation toolkit for software leadership, innovation, and 
 
 ```
 .
-├── research_digest.py          # Main orchestrator (plugin loader)
+├── rdt/digest.py          # Main orchestrator (plugin loader)
 ├── config_models.py            # Pydantic configuration models
 ├── database.py                 # SQLite deduplication (URL/title)
 ├── db_init.py                  # Database initialization from YAML config
@@ -81,7 +81,7 @@ Automated research aggregation toolkit for software leadership, innovation, and 
 ## Key Files
 
 - **Configuration:** `research_config.yaml`, `config_models.py`, `pyproject.toml`, `pytest.ini`
-- **Entry Points:** `research_digest.py` (CLI orchestrator), `python -m research_digest_tui` (TUI), `scrapers/*.py` (plugins)
+- **Entry Points:** `rdt/digest.py` (CLI orchestrator), `python -m research_digest_tui` (TUI), `scrapers/*.py` (plugins)
 - **Tests:** `tests/` (pytest suite with markers: unit, integration, database, slow, tui)
 
 ## Development Commands
@@ -91,8 +91,8 @@ Automated research aggregation toolkit for software leadership, innovation, and 
 uv pip install -r requirements.txt
 
 # Run
-./research_digest.py                              # CLI one-time run
-./research_digest.py --schedule "every(4).hours"  # Scheduled
+./rdt/digest.py                              # CLI one-time run
+./rdt/digest.py --schedule "every(4).hours"  # Scheduled
 python -m research_digest_tui                     # Launch TUI
 
 # Test
@@ -108,7 +108,7 @@ basedpyright .
 
 ## Architecture Notes
 
-**Plugin Architecture:** research_digest.py dynamically loads scraper plugins from `scrapers/` that inherit from `ScraperBase`. Each plugin implements `run(config, output_dir)`. Plugins are enabled/disabled via `research_config.yaml` under `scrapers.{name}.enabled`.
+**Plugin Architecture:** rdt/digest.py dynamically loads scraper plugins from `scrapers/` that inherit from `ScraperBase`. Each plugin implements `run(config, output_dir)`. Plugins are enabled/disabled via `research_config.yaml` under `scrapers.{name}.enabled`.
 
 **TUI Application:** `research_digest_tui/` is a Textual app with 6 screens navigable via keyboard shortcuts (d/s/c/l/h/u). Uses `switch_screen()` for navigation, per-screen TCSS files for styling. Phase 2 (in progress) adds service layer for real data integration.
 

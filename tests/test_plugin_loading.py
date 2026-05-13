@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests for plugin loading mechanism in research_digest.py.
+Tests for plugin loading mechanism in rdt/digest.py.
 """
 
 import sys
@@ -12,7 +12,7 @@ import yaml
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from research_digest import ResearchDigest
+from rdt.digest import ResearchDigest
 from scrapers.base import ScraperBase
 
 
@@ -53,7 +53,7 @@ class TestResearchDigestInit:
         digest = ResearchDigest(str(temp_config), verbose=False)
 
         assert digest.config is not None
-        from config_models import ResearchDigestConfig
+        from rdt.shared.config_models import ResearchDigestConfig
 
         assert isinstance(digest.config, ResearchDigestConfig)
         assert digest.verbose is False
@@ -62,7 +62,7 @@ class TestResearchDigestInit:
         """Test that config is loaded correctly."""
         digest = ResearchDigest(str(temp_config), verbose=False)
 
-        from config_models import ResearchDigestConfig
+        from rdt.shared.config_models import ResearchDigestConfig
 
         assert isinstance(digest.config, ResearchDigestConfig)
         assert hasattr(digest.config, "scrapers")
@@ -324,7 +324,7 @@ class TestLoadConfig:
         """Test that valid YAML is loaded correctly."""
         digest = ResearchDigest(str(temp_config), verbose=False)
 
-        from config_models import ResearchDigestConfig
+        from rdt.shared.config_models import ResearchDigestConfig
 
         assert isinstance(digest.config, ResearchDigestConfig)
         assert hasattr(digest.config, "scrapers")

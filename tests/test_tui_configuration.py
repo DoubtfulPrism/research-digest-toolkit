@@ -6,8 +6,9 @@ from unittest.mock import MagicMock
 
 class DummyApp(App):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.config_service = MagicMock()
+        self.data_service = MagicMock()
+        super().__init__(*args, **kwargs)
         
     def compose(self) -> ComposeResult:
         yield Configuration()

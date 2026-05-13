@@ -49,14 +49,14 @@ class TestAnalyzeTopicTrends:
     """Tests for analyze_topic_trends()."""
 
     def test_prints_table_for_db_with_data(self, tmp_path, capsys):
-        from analysis import analyze_topic_trends
+        from rdt.shared.analysis import analyze_topic_trends
 
         db = _make_analysis_db(tmp_path)
         # Should run without raising
         analyze_topic_trends(str(db))
 
     def test_empty_db_prints_warning(self, tmp_path, capsys):
-        from analysis import analyze_topic_trends
+        from rdt.shared.analysis import analyze_topic_trends
 
         db = _make_empty_analysis_db(tmp_path)
         analyze_topic_trends(str(db))
@@ -71,6 +71,6 @@ class TestAnalyzeTopicTrends:
         conn.close()
 
         with pytest.raises((Exception, SystemExit)):
-            from analysis import analyze_topic_trends
+            from rdt.shared.analysis import analyze_topic_trends
 
             analyze_topic_trends(str(db))

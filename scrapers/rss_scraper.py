@@ -8,11 +8,11 @@ from pathlib import Path
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-import database
-import utils
-from config_models import RSSConfig
-from http_client import get_sync_client, make_bearer_auth
-from rich_utils import print_error, print_info, print_section, print_warning
+from rdt.shared import database
+from rdt.shared import utils
+from rdt.shared.config_models import RSSConfig
+from rdt.shared.http_client import get_sync_client, make_bearer_auth
+from rdt.shared.rich_utils import print_error, print_info, print_section, print_warning
 
 try:
     import feedparser
@@ -55,10 +55,19 @@ def _filter_entries_by_date(entries: list, days_back: int) -> list:
     filtered = []
     for entry in entries:
         pub_date = None
-        if hasattr(entry, "published_parsed") and entry.published_parsed:
-            pub_date = datetime(*entry.published_parsed[:6])
-        elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
-            pub_date = datetime(*entry.updated_parsed[:6])
+        # Handle feedparser's published_parsed (time.struct_time or None)
+        try:
+            struct_time = getattr(entry, "published_parsed", None)
+            if struct_time:
+                # Ensure it's subscriptable and has at least 6 elements
+                pub_date = datetime(*struct_time[:6])
+            else:
+                struct_time = getattr(entry, "updated_parsed", None)
+                if struct_time:
+                    pub_date = datetime(*struct_time[:6])
+        except (TypeError, ValueError, IndexError):
+            # Fallback for invalid or missing dates: include them to be safe
+            pass
 
         if pub_date is None or pub_date >= cutoff_date:
             filtered.append(entry)
@@ -72,16 +81,26 @@ def _format_entry(entry: dict, feed_title: str, tags: list) -> str:
     author = entry.get("author", feed_title or "Unknown")
 
     pub_date = "Unknown"
-    if hasattr(entry, "published_parsed") and entry.published_parsed:
-        pub_date = datetime(*entry.published_parsed[:6]).strftime("%Y-%m-%d")
+    struct_time = getattr(entry, "published_parsed", None) or getattr(entry, "updated_parsed", None)
+    if struct_time:
+        try:
+            pub_date = datetime(*struct_time[:6]).strftime("%Y-%m-%d")
+        except (TypeError, ValueError, IndexError):
+            pass
 
     content = ""
-    if hasattr(entry, "content") and entry.content:
-        content = entry.content[0].get("value", "")
-    elif hasattr(entry, "summary"):
-        content = entry.summary
+    # Safely check for content list
+    entry_content = getattr(entry, "content", None)
+    if entry_content and isinstance(entry_content, list) and len(entry_content) > 0:
+        try:
+            content = entry_content[0].get("value", "")
+        except (AttributeError, TypeError):
+            pass
+    
+    if not content:
+        content = getattr(entry, "summary", "")
 
-    content = re.sub(r"<[^>]+>", "", content)  # Basic HTML cleaning
+    content = re.sub(r"<[^>]+>", "", str(content))  # Basic HTML cleaning
 
     # Escape straight quotes in YAML string values
     safe_title = title.replace('"', "\u201c").replace('"', "\u201d")
@@ -142,6 +161,7 @@ class RSSScraper(ScraperBase):
         feeds = config.feeds
         days_back = config.days_back
 
+        errors = []
         for feed_config in feeds:
             url = str(feed_config.url)
             name = feed_config.name
@@ -212,5 +232,10 @@ class RSSScraper(ScraperBase):
                     database.add_item("rss", link, title=title, url=link)
 
             except Exception as e:
+                err_msg = f"Feed {url}: {e}"
                 print_error(f"Error processing feed {url}: {e}", self.verbose)
+                errors.append(err_msg)
                 continue
+
+        if errors:
+            print_error(f"RSS scraper completed with {len(errors)} errors.", self.verbose)

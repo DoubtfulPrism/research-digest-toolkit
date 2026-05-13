@@ -136,7 +136,7 @@ pytest tests/ --durations=10
 | `scrapers/hn_scraper.py` | 84% | HackerNews scraper |
 | `file_splitter.py` | 86% | File splitting for NotebookLM |
 | `scrapers/rss_scraper.py` | 94% | RSS/Atom feed scraper |
-| `research_digest.py` | 50% | CLI orchestrator (subprocess-heavy) |
+| `rdt/digest.py` | 50% | CLI orchestrator (subprocess-heavy) |
 | `file_converter.py` | 47% | Document format conversion |
 
 ## Test Fixtures

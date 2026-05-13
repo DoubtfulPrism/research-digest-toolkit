@@ -51,7 +51,7 @@ def _find_or_create_config() -> Path:
 
 def main() -> None:
     """Launch the Research Digest TUI with auto-discovered config."""
-    from research_digest_tui.app import ResearchDigestApp
+    from rdt.tui.app import ResearchDigestApp
 
     config_path = _find_or_create_config()
     app = ResearchDigestApp(config_path=config_path)

@@ -65,17 +65,22 @@ class ScraperCard(Container):
         progress: float = 0.0,
         item_count: int = 0,
     ):
-        """Initialize the scraper card.
+        """Initialise the scraper card.
 
         Args:
             scraper_name: Scraper name
+            config_key: Key in the configuration dictionary
             status: Current status
             progress: Progress percentage (0.0 to 1.0)
             item_count: Number of items collected
         """
-        super().__init__()
-        self.scraper_name = scraper_name  # Use scraper_name instead of name
+        self.scraper_name = scraper_name
         self.config_key = config_key
+        # Set initial values for reactives before super().__init__ if possible, 
+        # but reactives are handled by the metaclass.
+        # However, non-reactive attributes MUST be set before super().__init__ 
+        # if watches depend on them.
+        super().__init__()
         self.status = status
         self.progress = progress
         self.item_count = item_count
@@ -113,15 +118,20 @@ class ScraperCard(Container):
         Args:
             new_status: The new status value ("running", "idle", "disabled")
         """
-        if not self.is_mounted:
+        if not self.is_mounted or not hasattr(self, "config_key"):
             return
+            
         status_class = f"status-{new_status}"
-        header = self.query_one(".card-header", Static)
-        header.update(f"{self.scraper_name} - [{status_class}]{new_status.title()}[/]")
-        toggle_label = "Enable" if new_status == "disabled" else "Disable"
-        self.query_one(f"#{self.config_key}-toggle", Button).label = (
-            toggle_label
-        )
+        try:
+            header = self.query_one(".card-header", Static)
+            header.update(f"{self.scraper_name} - [{status_class}]{new_status.title()}[/]")
+            toggle_label = "Enable" if new_status == "disabled" else "Disable"
+            self.query_one(f"#{self.config_key}-toggle", Button).label = (
+                toggle_label
+            )
+        except Exception:
+            # Component might not be fully composed yet
+            pass
 
     def watch_progress(self, new_progress: float) -> None:
         """Update progress bar when progress changes.
@@ -129,6 +139,11 @@ class ScraperCard(Container):
         Args:
             new_progress: The new progress value (0.0 to 1.0)
         """
-        if not self.is_mounted:
+        if not self.is_mounted or not hasattr(self, "config_key"):
             return
-        self.query_one(ProgressBar).progress = new_progress * 100
+            
+        try:
+            self.query_one(ProgressBar).progress = new_progress * 100
+        except Exception:
+            # Component might not be fully composed yet
+            pass

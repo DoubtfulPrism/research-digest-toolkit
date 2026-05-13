@@ -8,7 +8,7 @@ pytest.importorskip("textual")
 from textual.app import App, ComposeResult  # noqa: E402
 from textual.widgets import ProgressBar, Static  # noqa: E402
 
-from research_digest_tui.widgets import ScraperCard  # noqa: E402
+from rdt.tui.widgets import ScraperCard  # noqa: E402
 
 
 class _CardApp(App):
@@ -21,14 +21,14 @@ class _CardApp(App):
 
     def compose(self) -> ComposeResult:
         yield ScraperCard(
-            "TestScraper", status=self._initial_status, progress=self._initial_progress
+            "TestScraper", "testscraper", status=self._initial_status, progress=self._initial_progress
         )
 
 
 @pytest.mark.unit
 def test_scraper_card_creation():
     """Test ScraperCard widget can be instantiated."""
-    card = ScraperCard("HackerNews", status="idle", progress=0.0, item_count=0)
+    card = ScraperCard("HackerNews", "hackernews", status="idle", progress=0.0, item_count=0)
     assert card.scraper_name == "HackerNews"
     assert card.status == "idle"
     assert card.progress == 0.0
@@ -38,7 +38,7 @@ def test_scraper_card_creation():
 @pytest.mark.unit
 def test_scraper_card_reactive_properties():
     """Test ScraperCard reactive properties update correctly."""
-    card = ScraperCard("RSS", status="idle", progress=0.5, item_count=10)
+    card = ScraperCard("RSS", "rss", status="idle", progress=0.5, item_count=10)
 
     assert card.status == "idle"
     assert card.progress == 0.5
@@ -60,7 +60,7 @@ def test_scraper_card_with_different_statuses():
     statuses = ["idle", "running", "disabled"]
 
     for status in statuses:
-        card = ScraperCard("ArXiv", status=status, progress=0.0, item_count=0)
+        card = ScraperCard("ArXiv", "arxiv", status=status, progress=0.0, item_count=0)
         assert card.status == status
 
 

@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from research_digest_tui.config_models import ResearchDigestConfig
+from rdt.shared.config_models import ResearchDigestConfig
 
 # Maps YAML config keys → database source names
 SOURCE_NAME_MAPPING: dict[str, str] = {
@@ -285,4 +285,83 @@ class ConfigService:
         if "output" not in raw:
             raw["output"] = CommentedMap()
         raw["output"]["base_dir"] = path
+        self.save()
+
+    def set_processing_field(self, field: str, value: Any) -> None:
+        """Set a single field on the processing config and save."""
+        from ruamel.yaml import CommentedMap  # type: ignore[import-untyped]
+
+        raw = self._get_raw()
+        if "processing" not in raw:
+            raw["processing"] = CommentedMap()
+        raw["processing"][field] = value
+        self.save()
+
+    def set_format_field(self, field: str, value: Any) -> None:
+        """Set a single field on the formats config and save."""
+        from ruamel.yaml import CommentedMap  # type: ignore[import-untyped]
+
+        raw = self._get_raw()
+        if "formats" not in raw:
+            raw["formats"] = CommentedMap()
+        raw["formats"][field] = value
+        self.save()
+
+    def set_report_field(self, field: str, value: Any) -> None:
+        """Set a single field on the report config and save."""
+        from ruamel.yaml import CommentedMap  # type: ignore[import-untyped]
+
+        raw = self._get_raw()
+        if "report" not in raw:
+            raw["report"] = CommentedMap()
+        raw["report"][field] = value
+        self.save()
+
+    def set_topic(self, name: str, keywords: list[str]) -> None:
+        """Set or update a topic keyword list and save."""
+        from ruamel.yaml import CommentedMap  # type: ignore[import-untyped]
+
+        raw = self._get_raw()
+        if "topics" not in raw:
+            raw["topics"] = CommentedMap()
+        raw["topics"][name] = list(keywords)
+        self.save()
+
+    def remove_topic(self, name: str) -> None:
+        """Remove a topic by name and save."""
+        raw = self._get_raw()
+        if "topics" in raw and name in raw["topics"]:
+            del raw["topics"][name]
+            self.save()
+
+    def update_reddit_subreddits(self, sub_names: list[str]) -> None:
+        """Update the list of subreddits while preserving existing per-subreddit settings."""
+        from ruamel.yaml import CommentedMap  # type: ignore[import-untyped]
+
+        raw = self._get_raw()
+        scrapers = raw.get("scrapers", {})
+        reddit = scrapers.get("reddit", {})
+        existing_subs = reddit.get("subreddits", [])
+
+        # Build map of existing subs to preserve their min_upvotes and tags
+        sub_map = {}
+        for sub in existing_subs:
+            name = sub.get("name")
+            if name:
+                sub_map[name] = sub
+
+        new_subs = []
+        for name in sub_names:
+            if name in sub_map:
+                new_subs.append(sub_map[name])
+            else:
+                new_subs.append(
+                    CommentedMap({"name": name, "min_upvotes": 50, "tags": []})
+                )
+
+        if "scrapers" not in raw:
+            raw["scrapers"] = CommentedMap()
+        if "reddit" not in raw["scrapers"]:
+            raw["scrapers"]["reddit"] = CommentedMap()
+        raw["scrapers"]["reddit"]["subreddits"] = new_subs
         self.save()

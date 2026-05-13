@@ -9,19 +9,15 @@ from pathlib import Path
 from subprocess import PIPE, STDOUT
 
 
-def _build_scraper_cmd(config_path: Path, scraper_key: str) -> list[str]:
+def _build_scraper_cmd(config_path: Path, scraper_key: str | None) -> list[str]:
     """Build the subprocess command for running a scraper.
 
     Prefers the installed ``research-digest`` console script when available.
-    Falls back to ``sys.executable research_digest.py`` for dev usage.
-
-    Note: The current implementation previously used bare ``"python"`` which
-    may not resolve in all venv configurations. Using ``sys.executable`` fixes
-    this pre-existing defect while also supporting installed-package usage.
+    Falls back to ``sys.executable rdt/digest.py`` for dev usage.
 
     Args:
         config_path: Path to the config YAML file.
-        scraper_key: Config key for the scraper (e.g. ``"hackernews"``).
+        scraper_key: Config key for the scraper (e.g. ``"hackernews"``), or None for all.
 
     Returns:
         Command list suitable for ``subprocess.Popen``.
@@ -30,10 +26,14 @@ def _build_scraper_cmd(config_path: Path, scraper_key: str) -> list[str]:
     if installed:
         interpreter: list[str] = [installed]
     else:
+        # Resolve repo root relative to this file's location
         repo_root = Path(__file__).resolve().parent.parent.parent.parent
-        interpreter = [sys.executable, str(repo_root / "research_digest.py")]
+        interpreter = [sys.executable, str(repo_root / "rdt" / "digest.py")]
 
-    return interpreter + ["--config", str(config_path), "--scraper", scraper_key]
+    cmd = interpreter + ["--config", str(config_path)]
+    if scraper_key:
+        cmd.extend(["--scraper", scraper_key])
+    return cmd
 
 
 class RunnerService:
@@ -51,7 +51,7 @@ class RunnerService:
 
     def run_scraper(
         self,
-        scraper_key: str,
+        scraper_key: str | None,
         on_line: Callable[[str], None],
         on_complete: Callable[[bool], None],
     ) -> None:

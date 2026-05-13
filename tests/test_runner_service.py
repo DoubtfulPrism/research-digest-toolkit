@@ -14,13 +14,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 @pytest.mark.unit
 def test_build_scraper_cmd_uses_installed_binary_when_found(tmp_path):
     """_build_scraper_cmd uses the installed research-digest binary when available."""
-    from research_digest_tui.services.runner_service import _build_scraper_cmd
+    from rdt.tui.services.runner_service import _build_scraper_cmd
 
     config_path = tmp_path / "config.yaml"
     installed_path = "/usr/local/bin/research-digest"
 
     with patch(
-        "research_digest_tui.services.runner_service.shutil.which",
+        "rdt.tui.services.runner_service.shutil.which",
         return_value=installed_path,
     ):
         cmd = _build_scraper_cmd(config_path, "hackernews")
@@ -34,18 +34,18 @@ def test_build_scraper_cmd_uses_installed_binary_when_found(tmp_path):
 
 @pytest.mark.unit
 def test_build_scraper_cmd_falls_back_to_sys_executable_when_not_installed(tmp_path):
-    """_build_scraper_cmd falls back to sys.executable + research_digest.py when not installed."""
-    from research_digest_tui.services.runner_service import _build_scraper_cmd
+    """_build_scraper_cmd falls back to sys.executable + rdt/digest.py when not installed."""
+    from rdt.tui.services.runner_service import _build_scraper_cmd
 
     config_path = tmp_path / "config.yaml"
 
     with patch(
-        "research_digest_tui.services.runner_service.shutil.which", return_value=None
+        "rdt.tui.services.runner_service.shutil.which", return_value=None
     ):
         cmd = _build_scraper_cmd(config_path, "rss")
 
     assert cmd[0] == sys.executable
-    assert "research_digest.py" in cmd[1]
+    assert "rdt/digest.py" in cmd[1]
     assert "--config" in cmd
     assert str(config_path) in cmd
     assert "--scraper" in cmd
@@ -55,7 +55,7 @@ def test_build_scraper_cmd_falls_back_to_sys_executable_when_not_installed(tmp_p
 @pytest.mark.unit
 def test_runner_service_builds_correct_command(tmp_path):
     """run_scraper builds the correct subprocess command (dev fallback path)."""
-    from research_digest_tui.services.runner_service import RunnerService
+    from rdt.tui.services.runner_service import RunnerService
 
     config_path = tmp_path / "config.yaml"
     svc = RunnerService(config_path)
@@ -69,10 +69,10 @@ def test_runner_service_builds_correct_command(tmp_path):
 
     with (
         patch(
-            "research_digest_tui.services.runner_service.subprocess.Popen"
+            "rdt.tui.services.runner_service.subprocess.Popen"
         ) as mock_popen,
         patch(
-            "research_digest_tui.services.runner_service.shutil.which",
+            "rdt.tui.services.runner_service.shutil.which",
             return_value=None,
         ),
     ):
@@ -81,7 +81,7 @@ def test_runner_service_builds_correct_command(tmp_path):
 
         mock_popen.assert_called_once()
         cmd = mock_popen.call_args[0][0]
-        assert any("research_digest.py" in item for item in cmd)
+        assert any("rdt/digest.py" in item for item in cmd)
         assert "--config" in cmd
         assert str(config_path) in cmd
         assert "--scraper" in cmd
@@ -91,7 +91,7 @@ def test_runner_service_builds_correct_command(tmp_path):
 @pytest.mark.unit
 def test_runner_service_streams_lines_to_callback(tmp_path):
     """run_scraper calls on_line for each output line from the process."""
-    from research_digest_tui.services.runner_service import RunnerService
+    from rdt.tui.services.runner_service import RunnerService
 
     config_path = tmp_path / "config.yaml"
     svc = RunnerService(config_path)
@@ -102,7 +102,7 @@ def test_runner_service_streams_lines_to_callback(tmp_path):
     mock_proc.wait.return_value = 0
 
     with patch(
-        "research_digest_tui.services.runner_service.subprocess.Popen"
+        "rdt.tui.services.runner_service.subprocess.Popen"
     ) as mock_popen:
         mock_popen.return_value = mock_proc
         svc.run_scraper("rss", received_lines.append, lambda _: None)
@@ -113,7 +113,7 @@ def test_runner_service_streams_lines_to_callback(tmp_path):
 @pytest.mark.unit
 def test_runner_service_calls_on_complete_true_on_success(tmp_path):
     """run_scraper calls on_complete(True) when the process exits with 0."""
-    from research_digest_tui.services.runner_service import RunnerService
+    from rdt.tui.services.runner_service import RunnerService
 
     config_path = tmp_path / "config.yaml"
     svc = RunnerService(config_path)
@@ -124,7 +124,7 @@ def test_runner_service_calls_on_complete_true_on_success(tmp_path):
     mock_proc.wait.return_value = 0
 
     with patch(
-        "research_digest_tui.services.runner_service.subprocess.Popen"
+        "rdt.tui.services.runner_service.subprocess.Popen"
     ) as mock_popen:
         mock_popen.return_value = mock_proc
         svc.run_scraper("arxiv", lambda _: None, complete_results.append)
@@ -135,7 +135,7 @@ def test_runner_service_calls_on_complete_true_on_success(tmp_path):
 @pytest.mark.unit
 def test_runner_service_calls_on_complete_false_on_failure(tmp_path):
     """run_scraper calls on_complete(False) when the process exits non-zero."""
-    from research_digest_tui.services.runner_service import RunnerService
+    from rdt.tui.services.runner_service import RunnerService
 
     config_path = tmp_path / "config.yaml"
     svc = RunnerService(config_path)
@@ -146,7 +146,7 @@ def test_runner_service_calls_on_complete_false_on_failure(tmp_path):
     mock_proc.wait.return_value = 1
 
     with patch(
-        "research_digest_tui.services.runner_service.subprocess.Popen"
+        "rdt.tui.services.runner_service.subprocess.Popen"
     ) as mock_popen:
         mock_popen.return_value = mock_proc
         svc.run_scraper("rss", lambda _: None, complete_results.append)
@@ -171,7 +171,7 @@ def test_research_digest_scraper_flag_filters_scrapers(tmp_path):
     config_file = tmp_path / "config.yaml"
     config_file.write_text(yaml.dump(config_data))
 
-    from research_digest import ResearchDigest
+    from rdt.digest import ResearchDigest
 
     digest = ResearchDigest(str(config_file), verbose=False)
 

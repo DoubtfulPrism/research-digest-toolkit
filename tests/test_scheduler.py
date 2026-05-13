@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests for scheduler functionality in research_digest.py.
+Tests for scheduler functionality in rdt/digest.py.
 
 Testing Strategy:
 1. Unit tests for schedule string parsing
@@ -18,7 +18,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scheduler_utils import (
+from rdt.shared.scheduler_utils import (
     ScheduleError,
     SignalHandler,
     _validate_time_format,
@@ -92,7 +92,7 @@ class TestParseScheduleString:
 class TestSetupSchedule:
     """Tests for schedule setup."""
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_setup_every_n_hours(self, mock_schedule):
         """Test setting up 'every N hours' schedule."""
         job_func = Mock()
@@ -104,7 +104,7 @@ class TestSetupSchedule:
         mock_schedule.every.assert_called_once_with(4)
         mock_schedule.every.return_value.hours.do.assert_called_once_with(job_func)
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_setup_every_day_at_time(self, mock_schedule):
         """Test setting up 'every day at HH:MM' schedule."""
         job_func = Mock()
@@ -117,7 +117,7 @@ class TestSetupSchedule:
 
         mock_schedule.every.return_value.day.at.assert_called_once_with("10:30")
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_setup_every_monday_at_time(self, mock_schedule):
         """Test setting up weekday-specific schedule."""
         job_func = Mock()
@@ -135,25 +135,25 @@ class TestSetupSchedule:
         with pytest.raises(ScheduleError):
             setup_schedule("invalid", Mock())
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_setup_every_hour(self, mock_schedule):
         job_func = Mock()
         setup_schedule("every hour", job_func)
         mock_schedule.every.return_value.hour.do.assert_called_once_with(job_func)
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_setup_every_day(self, mock_schedule):
         job_func = Mock()
         setup_schedule("every day", job_func)
         mock_schedule.every.return_value.day.do.assert_called_once_with(job_func)
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_setup_every_minute(self, mock_schedule):
         job_func = Mock()
         setup_schedule("every minute", job_func)
         mock_schedule.every.return_value.minute.do.assert_called_once_with(job_func)
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_setup_every_second(self, mock_schedule):
         job_func = Mock()
         setup_schedule("every second", job_func)
@@ -211,7 +211,7 @@ class TestSignalHandler:
 class TestScheduleIntegration:
     """Integration tests for schedule functionality."""
 
-    @patch("scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.schedule")
     def test_schedule_job_runs(self, mock_schedule):
         """Test that scheduled job is properly registered."""
         job_func = Mock()
@@ -223,11 +223,11 @@ class TestScheduleIntegration:
         # Verify job was registered
         mock_schedule.every.return_value.hour.do.assert_called_once_with(job_func)
 
-    @patch("scheduler_utils.schedule")
-    @patch("scheduler_utils.time.sleep")
+    @patch("rdt.shared.scheduler_utils.schedule")
+    @patch("rdt.shared.scheduler_utils.time.sleep")
     def test_run_pending_loop(self, mock_sleep, mock_schedule):
         """Test that run_pending is called in loop."""
-        from scheduler_utils import run_scheduler
+        from rdt.shared.scheduler_utils import run_scheduler
 
         handler = SignalHandler()
 

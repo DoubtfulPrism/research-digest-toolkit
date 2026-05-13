@@ -6,10 +6,10 @@ from pathlib import Path
 
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-import database
-import utils
-from config_models import ArxivConfig
-from rich_utils import print_error, print_info, print_section, print_warning
+from rdt.shared import database
+from rdt.shared import utils
+from rdt.shared.config_models import ArxivConfig
+from rdt.shared.rich_utils import print_error, print_info, print_section, print_warning
 
 from .base import ScraperBase
 

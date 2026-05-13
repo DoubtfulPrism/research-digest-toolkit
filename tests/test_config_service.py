@@ -4,7 +4,7 @@
 import pytest
 import yaml
 
-from research_digest_tui.services.config_service import ConfigService
+from rdt.tui.services.config_service import ConfigService
 
 
 @pytest.mark.unit

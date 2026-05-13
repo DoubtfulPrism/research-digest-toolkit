@@ -1,0 +1,15 @@
+name: "structural-architect"
+description: "Enables deep codebase awareness using GitNexus knowledge graphs"
+version: "1.0.0"
+
+# Connect the MCP server specifically for this skill
+mcpServers:
+  gitnexus:
+    command: "npx"
+    args: ["-y", "@abhigyanpatwari/gitnexus", "mcp"]
+
+# Define when Antigravity should automatically "wake up" this skill
+triggers:
+  - keywords: ["refactor", "dependency", "impact analysis", "where is this used", "architectural change"]
+  - files: ["**/*.ts", "**/*.go", "**/*.py"] # Focus on logic files
+  - complexity_threshold: "high"

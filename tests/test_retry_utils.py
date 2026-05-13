@@ -12,49 +12,49 @@ class TestShouldRetryHttpError:
     """Tests for should_retry_http_error()."""
 
     def test_5xx_server_error_returns_true(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.HTTPError()
         exc.response = MagicMock(status_code=500)
         assert should_retry_http_error(exc) is True
 
     def test_503_returns_true(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.HTTPError()
         exc.response = MagicMock(status_code=503)
         assert should_retry_http_error(exc) is True
 
     def test_429_rate_limit_returns_true(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.HTTPError()
         exc.response = MagicMock(status_code=429)
         assert should_retry_http_error(exc) is True
 
     def test_404_not_found_returns_false(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.HTTPError()
         exc.response = MagicMock(status_code=404)
         assert should_retry_http_error(exc) is False
 
     def test_401_unauthorized_returns_false(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.HTTPError()
         exc.response = MagicMock(status_code=401)
         assert should_retry_http_error(exc) is False
 
     def test_400_bad_request_returns_false(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.HTTPError()
         exc.response = MagicMock(status_code=400)
         assert should_retry_http_error(exc) is False
 
     def test_http_error_no_response_returns_false(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.HTTPError()
         exc.response = None
@@ -63,19 +63,19 @@ class TestShouldRetryHttpError:
         assert isinstance(result, bool)
 
     def test_timeout_returns_true(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.Timeout()
         assert should_retry_http_error(exc) is True
 
     def test_connection_error_returns_true(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         exc = requests.exceptions.ConnectionError()
         assert should_retry_http_error(exc) is True
 
     def test_non_http_exception_returns_false(self):
-        from retry_utils import should_retry_http_error
+        from rdt.shared.retry_utils import should_retry_http_error
 
         assert should_retry_http_error(ValueError("bad")) is False
 
@@ -85,13 +85,13 @@ class TestRetryWithLogging:
     """Tests for retry_with_logging() decorator factory."""
 
     def test_returns_callable_decorator(self):
-        from retry_utils import retry_with_logging
+        from rdt.shared.retry_utils import retry_with_logging
 
         decorator = retry_with_logging(verbose=False)
         assert callable(decorator)
 
     def test_decorated_function_succeeds_on_first_try(self):
-        from retry_utils import retry_with_logging
+        from rdt.shared.retry_utils import retry_with_logging
 
         call_count = 0
 
@@ -106,7 +106,7 @@ class TestRetryWithLogging:
         assert call_count == 1
 
     def test_decorated_function_raises_after_exhausted_retries(self):
-        from retry_utils import retry_with_logging
+        from rdt.shared.retry_utils import retry_with_logging
 
         @retry_with_logging(verbose=False)
         def always_fail():
@@ -117,7 +117,7 @@ class TestRetryWithLogging:
             always_fail()
 
     def test_verbose_logs_retry_attempt(self, capsys):
-        from retry_utils import retry_with_logging
+        from rdt.shared.retry_utils import retry_with_logging
 
         call_count = 0
 
@@ -139,13 +139,13 @@ class TestRetryApiCall:
     """Tests for retry_api_call() decorator factory."""
 
     def test_returns_callable_decorator(self):
-        from retry_utils import retry_api_call
+        from rdt.shared.retry_utils import retry_api_call
 
         decorator = retry_api_call(verbose=False)
         assert callable(decorator)
 
     def test_decorated_function_succeeds_on_first_try(self):
-        from retry_utils import retry_api_call
+        from rdt.shared.retry_utils import retry_api_call
 
         @retry_api_call(verbose=False)
         def fn():
@@ -154,7 +154,7 @@ class TestRetryApiCall:
         assert fn() == 42
 
     def test_verbose_logs_general_api_failure(self, capsys):
-        from retry_utils import retry_api_call
+        from rdt.shared.retry_utils import retry_api_call
 
         call_count = 0
 
@@ -170,7 +170,7 @@ class TestRetryApiCall:
         assert result == "done"
 
     def test_verbose_logs_rate_limit_429(self, capsys):
-        from retry_utils import retry_api_call
+        from rdt.shared.retry_utils import retry_api_call
 
         call_count = 0
 
@@ -194,9 +194,9 @@ class TestRetryApiCall:
 class TestMakeResilientRequest:
     """Tests for make_resilient_request()."""
 
-    @patch("retry_utils.requests.get")
+    @patch("rdt.shared.retry_utils.requests.get")
     def test_successful_request_without_session(self, mock_get):
-        from retry_utils import make_resilient_request
+        from rdt.shared.retry_utils import make_resilient_request
 
         mock_resp = MagicMock()
         mock_resp.raise_for_status.return_value = None
@@ -207,7 +207,7 @@ class TestMakeResilientRequest:
         mock_get.assert_called_once_with("https://example.com")
 
     def test_successful_request_with_session(self):
-        from retry_utils import make_resilient_request
+        from rdt.shared.retry_utils import make_resilient_request
 
         session = MagicMock()
         mock_resp = MagicMock()
@@ -225,9 +225,9 @@ class TestMakeResilientRequest:
 class TestMakeResilientApiCall:
     """Tests for make_resilient_api_call()."""
 
-    @patch("retry_utils.requests.get")
+    @patch("rdt.shared.retry_utils.requests.get")
     def test_successful_call_without_session(self, mock_get):
-        from retry_utils import make_resilient_api_call
+        from rdt.shared.retry_utils import make_resilient_api_call
 
         mock_resp = MagicMock()
         mock_resp.raise_for_status.return_value = None
@@ -237,7 +237,7 @@ class TestMakeResilientApiCall:
         assert result == mock_resp
 
     def test_successful_call_with_session(self):
-        from retry_utils import make_resilient_api_call
+        from rdt.shared.retry_utils import make_resilient_api_call
 
         session = MagicMock()
         mock_resp = MagicMock()

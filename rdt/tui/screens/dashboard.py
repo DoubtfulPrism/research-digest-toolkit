@@ -71,24 +71,16 @@ class Dashboard(Screen):
         btn_id = event.button.id or ""
 
         if btn_id == "run-all-dashboard":
-            enabled_keys = [
-                s["config_key"]
-                for s in self.app.config_service.get_scraper_configs()
-                if s["enabled"]
-            ]
-            if enabled_keys:
-                self.app.notify(f"Started {len(enabled_keys)} scrapers in background.")
-                for k in enabled_keys:
-                    self.run_worker(
-                        lambda key=k: self.app.runner_service.run_scraper(
-                            key,
-                            lambda l: None,
-                            lambda s, name=key: self.app.call_from_thread(self.app.notify, f"{name} finished: {s}")
-                        ),
-                        thread=True
-                    )
-            else:
-                self.app.notify("No scrapers are enabled.", severity="warning")
+            self.app.notify("Starting full research digest pipeline...")
+            # Run the full pipeline sequentially (target_scraper=None)
+            self.run_worker(
+                lambda: self.app.runner_service.run_scraper(
+                    None, # None means run all sequentially
+                    lambda l: None,
+                    lambda s: self.app.call_from_thread(self.app.notify, f"Full digest finished: {s}")
+                ),
+                thread=True
+            )
             return
 
         if btn_id.endswith("-run"):

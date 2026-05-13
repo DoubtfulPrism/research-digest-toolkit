@@ -31,7 +31,7 @@ class Logs(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
-        """Initialize the DataTable with columns and load data."""
+        """Initialise the DataTable with columns and load data."""
         table = self.query_one("#content-table", DataTable)
         table.add_columns("Source", "Title", "Date")
         self._load_items()

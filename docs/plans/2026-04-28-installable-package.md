@@ -61,7 +61,7 @@ Type: Feature
   - `pyproject.toml` — already has `[build-system]`, `[project]`, `[project.scripts]`, and `[tool.hatch.build.targets.wheel]` (committed in `cdda8c0`)
   - `research_digest_tui/app.py:31-41` — `ResearchDigestApp.__init__` accepts optional `config_path` and `db_path` params
   - `research_digest_tui/__main__.py` — current entry point creates `ResearchDigestApp()` with no args
-  - `research_digest_tui/services/runner_service.py:36-43` — hardcodes `["python", "research_digest.py", ...]`
+  - `research_digest_tui/services/runner_service.py:36-43` — hardcodes `["python", "rdt/digest.py", ...]`
   - `config_models.py` (137 lines) — self-contained Pydantic models, no local imports
   - `rich_utils.py` (173 lines) — Rich console helpers, no local imports
   - `scheduler_utils.py` (223 lines) — schedule library wrapper, one local import: `from rich_utils import print_info`
@@ -69,7 +69,7 @@ Type: Feature
   - `test_scheduler.py` hangs due to `SignalHandler` blocking on signals — always run with `--ignore=tests/test_scheduler.py` or use `--timeout=60`
   - `pytest.ini` injects `--cov` into every run via `addopts` — use `--no-cov --override-ini="addopts="` for fast iteration
   - The two TUI service files (`config_service.py`, `scheduler_service.py`) currently import from top-level modules (`from config_models import ...`). In the committed state, these work because `sys.path` includes the repo root. After updating to package imports, they work because the modules exist inside the package.
-  - `test_runner_service.py:37` asserts `"research_digest.py" in cmd` — this test must be updated when RunnerService changes
+  - `test_runner_service.py:37` asserts `"rdt/digest.py" in cmd` — this test must be updated when RunnerService changes
 
 ## Assumptions
 
@@ -314,7 +314,7 @@ uv run python -c "import zipfile, glob; z=zipfile.ZipFile(sorted(glob.glob('dist
 
 ### Task 5: Fix RunnerService for installed environments (TDD)
 
-**Objective:** Update `RunnerService.run_scraper()` to prefer the installed `research-digest` console script when available, falling back to `sys.executable research_digest.py` for dev usage.
+**Objective:** Update `RunnerService.run_scraper()` to prefer the installed `research-digest` console script when available, falling back to `sys.executable rdt/digest.py` for dev usage.
 
 **Dependencies:** Task 2
 
@@ -327,16 +327,16 @@ uv run python -c "import zipfile, glob; z=zipfile.ZipFile(sorted(glob.glob('dist
 
 - TDD: Write tests FIRST for a new `_build_scraper_cmd(config_path, scraper_key)` function:
   1. When `shutil.which("research-digest")` returns a path → use it as cmd[0]
-  2. When `shutil.which` returns None → use `[sys.executable, "<repo_root>/research_digest.py", ...]`
+  2. When `shutil.which` returns None → use `[sys.executable, "<repo_root>/rdt/digest.py", ...]`
 - Extract command building into `_build_scraper_cmd()` so `run_scraper()` just calls it.
-- The existing test at `test_runner_service.py:37` checks `"research_digest.py" in cmd` — update this to mock `shutil.which` returning None (dev fallback path) so the assertion remains valid.
+- The existing test at `test_runner_service.py:37` checks `"rdt/digest.py" in cmd` — update this to mock `shutil.which` returning None (dev fallback path) so the assertion remains valid.
 - **Pre-existing defect fix:** The current implementation uses bare `"python"` which may not resolve in all venv configurations. The dev fallback path fixes this by using `sys.executable`, which always points to the active interpreter. This is a pre-existing defect fix bundled with the installed-path feature — do not revert or soften the `sys.executable` change thinking it is scope creep.
-- Dev fallback uses `Path(__file__).resolve().parent.parent` to find repo root, then appends `research_digest.py`.
+- Dev fallback uses `Path(__file__).resolve().parent.parent` to find repo root, then appends `rdt/digest.py`.
 
 **Definition of Done:**
 
 - [ ] `_build_scraper_cmd()` returns installed path when `shutil.which` finds it
-- [ ] `_build_scraper_cmd()` returns `sys.executable + research_digest.py` when not installed
+- [ ] `_build_scraper_cmd()` returns `sys.executable + rdt/digest.py` when not installed
 - [ ] All runner service tests pass (existing + new)
 - [ ] No changes to `RunnerService.__init__` signature
 
@@ -400,7 +400,7 @@ uv run pytest tests/test_tui_integration.py -q --no-cov --override-ini="addopts=
 
 - Remove the line `research-digest = "research_digest:app"` from `[project.scripts]`.
 - The `Research_Toolkit` entry point stays.
-- Also keep the `research_digest.py` in the `[tool.hatch.build.targets.wheel] include` list — it's still used by RunnerService's dev fallback.
+- Also keep the `rdt/digest.py` in the `[tool.hatch.build.targets.wheel] include` list — it's still used by RunnerService's dev fallback.
 - Update the comment on the `include` block from `# Top-level runtime modules: shims + CLI orchestrator` to `# Top-level runtime modules included for dev-fallback in RunnerService`.
 
 **Definition of Done:**

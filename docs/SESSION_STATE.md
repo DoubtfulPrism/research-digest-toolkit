@@ -242,7 +242,7 @@ Scripts/
 │   ├── reddit_scraper.py
 │   └── rss_scraper.py
 ├── tests/               # 151 passing tests
-├── research_digest.py   # Main CLI entry point
+├── rdt/digest.py   # Main CLI entry point
 ├── scheduler_utils.py   # schedule library integration
 ├── config_models.py     # Pydantic config models
 ├── http_client.py       # HTTPX + DiskCache
@@ -304,7 +304,7 @@ Scripts/
 - **Unstaged Changes:** 23 files (intentionally kept local)
   - .coverage, analysis.py, config_models.py, db_init.py
   - file_converter.py, file_splitter.py, http_client.py
-  - research_digest.py, retry_utils.py, scheduler_utils.py
+  - rdt/digest.py, retry_utils.py, scheduler_utils.py
   - All 4 scrapers (arxiv, hn, reddit, rss)
   - 5 test files
   - thread_reader.py, utils.py, web_scraper.py, youtube_transcript.py

@@ -81,7 +81,7 @@ for file in scraper_dir.glob("*_scraper.py"):
 **Good:**
 
 ```python
-# research_digest.py
+# rdt/digest.py
 scrapers = discover_plugins("scrapers/")  # Dynamic
 for scraper in scrapers:
     if config["scrapers"][scraper.name.lower()]["enabled"]:
@@ -91,7 +91,7 @@ for scraper in scrapers:
 **Bad:**
 
 ```python
-# research_digest.py
+# rdt/digest.py
 from scrapers.hn_scraper import HNScraper  # Static import
 from scrapers.reddit_scraper import RedditScraper
 # ... manual instantiation, not extensible

@@ -24,8 +24,17 @@
     height: auto;
 }
 
-#scraper-form, #feeds-section, #feeds-list, #add-feed-form, #hn-fields, #arxiv-fields, #reddit-fields {
+#global-form, #scraper-form, #feeds-section, #feeds-list, #add-feed-form, #hn-fields, #arxiv-fields, #reddit-fields, #processing-form, #formats-form, #report-form, #topics-section, #topics-list, #add-topic-form {
     height: auto;
+}
+
+.topic-row {
+    height: auto;
+    margin-bottom: 1;
+}
+
+.topic-label {
+    width: 1fr;
 }
 
 .panel-heading {

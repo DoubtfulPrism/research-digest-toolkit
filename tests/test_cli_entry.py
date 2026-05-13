@@ -1,4 +1,4 @@
-"""Tests for research_digest_tui.cli config discovery and entry point."""
+"""Tests for rdt.tui.cli config discovery and entry point."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -12,9 +12,9 @@ def test_find_or_create_config_returns_cwd_config_when_present(tmp_path):
     cwd_config = tmp_path / "research_config.yaml"
     cwd_config.write_text("days_back: 7\n")
 
-    from research_digest_tui.cli import _find_or_create_config
+    from rdt.tui.cli import _find_or_create_config
 
-    with patch("research_digest_tui.cli._cwd_config", return_value=cwd_config):
+    with patch("rdt.tui.cli._cwd_config", return_value=cwd_config):
         result = _find_or_create_config()
 
     assert result == cwd_config
@@ -30,11 +30,11 @@ def test_find_or_create_config_returns_home_config_when_cwd_absent(tmp_path):
 
     missing_cwd = tmp_path / "nonexistent_research_config.yaml"
 
-    from research_digest_tui.cli import _find_or_create_config
+    from rdt.tui.cli import _find_or_create_config
 
     with (
-        patch("research_digest_tui.cli._cwd_config", return_value=missing_cwd),
-        patch("research_digest_tui.cli._home_config", return_value=home_config),
+        patch("rdt.tui.cli._cwd_config", return_value=missing_cwd),
+        patch("rdt.tui.cli._home_config", return_value=home_config),
     ):
         result = _find_or_create_config()
 
@@ -52,12 +52,12 @@ def test_find_or_create_config_copies_default_on_first_run(tmp_path):
     fake_bundled = tmp_path / "research_config.default.yaml"
     fake_bundled.write_text("scrapers: {}\n")
 
-    from research_digest_tui.cli import _find_or_create_config
+    from rdt.tui.cli import _find_or_create_config
 
     with (
-        patch("research_digest_tui.cli._cwd_config", return_value=missing_cwd),
-        patch("research_digest_tui.cli._home_config", return_value=home_config),
-        patch("research_digest_tui.cli._bundled_default", return_value=fake_bundled),
+        patch("rdt.tui.cli._cwd_config", return_value=missing_cwd),
+        patch("rdt.tui.cli._home_config", return_value=home_config),
+        patch("rdt.tui.cli._bundled_default", return_value=fake_bundled),
     ):
         result = _find_or_create_config()
 
@@ -73,9 +73,9 @@ def test_find_or_create_config_returns_path_object(tmp_path):
     cwd_config = tmp_path / "research_config.yaml"
     cwd_config.write_text("days_back: 7\n")
 
-    from research_digest_tui.cli import _find_or_create_config
+    from rdt.tui.cli import _find_or_create_config
 
-    with patch("research_digest_tui.cli._cwd_config", return_value=cwd_config):
+    with patch("rdt.tui.cli._cwd_config", return_value=cwd_config):
         result = _find_or_create_config()
 
     assert isinstance(result, Path)
@@ -84,19 +84,19 @@ def test_find_or_create_config_returns_path_object(tmp_path):
 @pytest.mark.unit
 def test_main_function_is_callable():
     """main() exists and is callable (no args required)."""
-    from research_digest_tui.cli import main
+    from rdt.tui.cli import main
 
     assert callable(main)
 
 
 @pytest.mark.unit
 def test_bundled_default_returns_path_within_package():
-    """_bundled_default() returns a path inside the research_digest_tui package."""
-    from research_digest_tui.cli import _bundled_default
+    """_bundled_default() returns a path inside the rdt.tui package."""
+    from rdt.tui.cli import _bundled_default
 
     path = _bundled_default()
     assert isinstance(path, Path)
-    assert "research_digest_tui" in str(path)
+    assert "rdt/tui" in str(path)
     assert path.name == "research_config.default.yaml"
     assert path.exists(), f"Bundled default config not found at: {path}"
 

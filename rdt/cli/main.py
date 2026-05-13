@@ -2,9 +2,46 @@ import typer
 from pathlib import Path
 
 from rdt.tui.services.update_service import UpdateService
+from rdt import digest
 
-# Initialize Typer app
+def version_callback(value: bool):
+    if value:
+        from rdt.core.version import get_local_version
+        typer.echo(f"RDT v{get_local_version()}")
+        raise typer.Exit()
+
+# Initialise Typer app
 app = typer.Typer(help="Research Digest Toolkit (RDT) CLI")
+
+@app.callback()
+def common(
+    version: bool = typer.Option(None, "--version", "-v", callback=version_callback, help="Show version and exit"),
+):
+    pass
+
+@app.command()
+def check():
+    """Verify system dependencies (pdftotext, pandoc)."""
+    from rdt.core.validator import DependencyValidator
+    
+    validator = DependencyValidator()
+    typer.echo("🔍 Checking system dependencies…")
+    
+    results = validator.check_all()
+    all_found = True
+    
+    for dep in results:
+        status_icon = "✅" if dep.found else "❌"
+        typer.echo(f"{status_icon} {dep.name}: {dep.path}")
+        if not dep.found:
+            all_found = False
+            typer.secho(f"   💡 {dep.install_hint}", fg=typer.colors.YELLOW)
+            
+    if all_found:
+        typer.secho("\n✅ All core dependencies found. Ready to initialise conversion.", fg=typer.colors.GREEN)
+    else:
+        typer.secho("\n❌ Some dependencies are missing. Please install them to ensure full functionality.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
 
 @app.command()
 def convert(
@@ -15,7 +52,7 @@ def convert(
     """Convert a document to markdown for a specific destination."""
     from rdt.core.converter import CoreIngestor
     from rdt.adapters.substack import SubstackAdapter
-    import rdt.adapters.obsidian as obsidian_adapter
+    import rdt.shared.obsidian as obsidian_adapter
     
     typer.echo(f"Starting conversion for {input_file} -> {output_dir}")
     try:
@@ -83,6 +120,36 @@ def update(
     else:
         typer.secho(f"❌ Update failed: {outcome.error}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
+
+@app.command()
+def scrape(
+    config: str = typer.Option(
+        "research_config.yaml",
+        "--config",
+        "-c",
+        help="Config file path",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet",
+        "-q",
+        help="Quiet mode, minimal output",
+    ),
+    schedule: str = typer.Option(
+        None,
+        "--schedule",
+        "-s",
+        help="Run the digest on a schedule (e.g., 'every 4 hours').",
+    ),
+    scraper: str = typer.Option(
+        None,
+        "--scraper",
+        help="Run only this scraper by config key (hackernews, rss, reddit, arxiv).",
+    ),
+):
+    """Run the automated research aggregation pipeline."""
+    # This calls the main logic in digest.py
+    digest.main(config=config, quiet=quiet, schedule_str=schedule, scraper=scraper)
 
 if __name__ == "__main__":
     app()

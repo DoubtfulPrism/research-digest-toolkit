@@ -37,7 +37,7 @@ Type: Feature
 - Create 3 new placeholder screens (Logs, History/Analytics, Scheduler)
 - Update app.py navigation to include all 6 screens
 - Add keyboard shortcuts for all screens (d, s, c, l, h, u)
-- Add `--tui` flag to `research_digest.py`
+- Add `--tui` flag to `rdt/digest.py`
 - CSS styling for new screens
 - Unit tests for all new screens
 - `__main__.py` entry point for `python -m research_digest_tui`
@@ -269,32 +269,32 @@ Type: Feature
 
 ### Task 6: Integrate TUI with CLI (`--tui` Flag)
 
-**Objective:** Add `--tui` flag to `research_digest.py` to launch the TUI application.
+**Objective:** Add `--tui` flag to `rdt/digest.py` to launch the TUI application.
 
 **Dependencies:** Task 5
 
 **Files:**
 
-- Modify: `research_digest.py`
+- Modify: `rdt/digest.py`
 
 **Key Decisions / Notes:**
 
 - Add `--tui` boolean flag to the Typer app
 - When `--tui` is passed, import and run `ResearchDigestApp`
 - Skip normal CLI flow when TUI is active
-- Ensure TUI can be launched with: `python research_digest.py --tui`
+- Ensure TUI can be launched with: `python rdt/digest.py --tui`
 
 **Definition of Done:**
 
-- [ ] `--tui` flag added to research_digest.py
+- [ ] `--tui` flag added to rdt/digest.py
 - [ ] TUI launches when flag is passed
 - [ ] Normal CLI behavior preserved when flag is not passed
 - [ ] Help text shows `--tui` option
 
 **Verify:**
 
-- `python research_digest.py --help` — shows `--tui` option
-- `python research_digest.py --tui` — launches TUI
+- `python rdt/digest.py --help` — shows `--tui` option
+- `python rdt/digest.py --tui` — launches TUI
 
 ---
 
@@ -342,7 +342,7 @@ python -m research_digest_tui
 **Start TUI (via CLI flag):**
 ```bash
 cd .worktrees/spec-tui-phase1-foundation-8537b4f
-python research_digest.py --tui
+python rdt/digest.py --tui
 ```
 
 **Expected behavior:**
@@ -379,7 +379,7 @@ python research_digest.py --tui
 
 ### Truths (what must be TRUE for the goal to be achieved)
 
-- Users can launch the TUI with `python research_digest.py --tui`
+- Users can launch the TUI with `python rdt/digest.py --tui`
 - Users can navigate to all 6 screens using keyboard shortcuts
 - All screens display placeholder content indicating future functionality
 - Footer shows all available keyboard bindings
@@ -393,7 +393,7 @@ python research_digest.py --tui
 
 ### Key Links (critical connections that must be WIRED)
 
-- `--tui` flag in `research_digest.py` → imports and runs `ResearchDigestApp`
+- `--tui` flag in `rdt/digest.py` → imports and runs `ResearchDigestApp`
 - Keyboard bindings in `app.BINDINGS` → action methods `action_show_*`
 - `app.SCREENS` dict → all 6 screen classes
 - Screen `__init__.py` exports → screen classes used by `app.py`

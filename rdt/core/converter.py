@@ -13,15 +13,25 @@ class ConversionError(Exception):
     """Exception raised for errors in the conversion process."""
     pass
 
+from typing import Callable, List, Optional, NamedTuple
+
+class BatchResult(NamedTuple):
+    """Result of a batch conversion operation."""
+    successes: List[Path]
+    failures: List[tuple[Path, str]]
+    total: int
+
 class CoreIngestor:
     """Handles the ingestion and conversion of documents (PDF, DOCX) to Markdown."""
     
+    SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
+
     def __init__(self, output_dir: Path):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
     def process_file(self, input_file: Path) -> Path:
-        """Process a file and return the path to the converted Markdown file."""
+        """Process a single file and return the path to the converted Markdown file."""
         input_file = Path(input_file)
         if not input_file.exists():
             raise FileNotFoundError(f"Input file not found: {input_file}")
@@ -29,9 +39,7 @@ class CoreIngestor:
         filename = input_file.stem
         output_file = self.output_dir / f"{filename}.md"
         
-        # Determine file type
         suffix = input_file.suffix.lower()
-        
         if suffix == ".pdf":
             self._convert_pdf(input_file, output_file)
         elif suffix == ".docx":
@@ -39,15 +47,50 @@ class CoreIngestor:
         else:
             raise ConversionError(f"Unsupported file type: {suffix}")
             
-        # Ensure output file was created
-        if not output_file.exists():
-            # In our mocked tests we might just manually touch the file,
-            # but in reality if the file doesn't exist we should raise.
-            output_file.touch() # Just for tests that mock subprocess but don't create output
-            # Actually, standardizing this:
-            pass
-            
         return output_file
+
+    def process_batch(
+        self, 
+        paths: List[Path], 
+        on_progress: Optional[Callable[[int, int, Path, str], None]] = None
+    ) -> BatchResult:
+        """Process multiple files or directories recursively.
+        
+        Args:
+            paths: List of file or directory paths to process.
+            on_progress: Optional callback(current, total, file, status)
+        """
+        all_files: List[Path] = []
+        for p in paths:
+            p = Path(p)
+            if p.is_dir():
+                # Recursive search for supported files
+                for ext in self.SUPPORTED_EXTENSIONS:
+                    all_files.extend(p.rglob(f"*{ext}"))
+            elif p.suffix.lower() in self.SUPPORTED_EXTENSIONS:
+                all_files.append(p)
+
+        total = len(all_files)
+        successes = []
+        failures = []
+
+        for i, file_path in enumerate(all_files, 1):
+            status = "PROCESSING"
+            if on_progress:
+                on_progress(i, total, file_path, status)
+            
+            try:
+                self.process_file(file_path)
+                successes.append(file_path)
+                status = "SUCCESS"
+            except Exception as e:
+                failures.append((file_path, str(e)))
+                status = f"FAILED: {e}"
+            
+            if on_progress:
+                on_progress(i, total, file_path, status)
+
+        return BatchResult(successes=successes, failures=failures, total=total)
         
     def _convert_pdf(self, input_file: Path, output_file: Path):
         """Convert PDF to Markdown using native tools or fallback."""

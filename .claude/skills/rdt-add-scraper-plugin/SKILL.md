@@ -112,7 +112,7 @@ scrapers:
 # Edit research_config.yaml: set other scrapers to enabled: false
 
 # 2. Run the digest
-./research_digest.py
+./rdt/digest.py
 
 # 3. Verify output
 ls research_digest/$(date +%Y-%m-%d)/raw/[source]/
@@ -165,7 +165,7 @@ def _fetch_all_pages(self, base_url, max_results):
 
 1. **Plugin discovered:**
    ```bash
-   ./research_digest.py
+   ./rdt/digest.py
    # Should see: "Found plugin: [Source]Scraper"
    ```
 
@@ -184,7 +184,7 @@ def _fetch_all_pages(self, base_url, max_results):
      [source]:
        enabled: false
    ```
-   Run `./research_digest.py` - should skip your scraper
+   Run `./rdt/digest.py` - should skip your scraper
 
 ## Common Gotchas
 

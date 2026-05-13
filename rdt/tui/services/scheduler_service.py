@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from research_digest_tui.scheduler_utils import ScheduleError, parse_schedule_string
+from rdt.shared.scheduler_utils import ScheduleError, parse_schedule_string
 
 if TYPE_CHECKING:
     from .config_service import ConfigService

@@ -35,7 +35,7 @@ Tools (10 total):
 - obsidian_prep.py - Obsidian formatter with auto-tagging
 - file_splitter.py - Large file splitter for NotebookLM
 - file_converter.py - Document format converter
-- research_digest.py - Automated orchestrator
+- rdt/digest.py - Automated orchestrator
 
 Features:
 - Single-command research aggregation

@@ -13,28 +13,28 @@ class TestGetSyncClient:
     """Tests for get_sync_client()."""
 
     def test_returns_httpx_client(self):
-        from http_client import get_sync_client
+        from rdt.shared.http_client import get_sync_client
 
         client = get_sync_client(use_cache=False)
         assert isinstance(client, httpx.Client)
         client.close()
 
     def test_with_cache_uses_cache_transport(self):
-        from http_client import CacheControlTransport, get_sync_client
+        from rdt.shared.http_client import CacheControlTransport, get_sync_client
 
         client = get_sync_client(use_cache=True)
         assert isinstance(client._transport, CacheControlTransport)
         client.close()
 
     def test_without_cache_uses_default_transport(self):
-        from http_client import CacheControlTransport, get_sync_client
+        from rdt.shared.http_client import CacheControlTransport, get_sync_client
 
         client = get_sync_client(use_cache=False)
         assert not isinstance(client._transport, CacheControlTransport)
         client.close()
 
     def test_with_auth(self):
-        from http_client import get_sync_client
+        from rdt.shared.http_client import get_sync_client
 
         auth = httpx.BasicAuth("user", "pass")
         client = get_sync_client(use_cache=False, auth=auth)
@@ -47,19 +47,19 @@ class TestGetAsyncClient:
     """Tests for get_async_client()."""
 
     def test_returns_httpx_async_client(self):
-        from http_client import get_async_client
+        from rdt.shared.http_client import get_async_client
 
         client = get_async_client(use_cache=False)
         assert isinstance(client, httpx.AsyncClient)
 
     def test_with_cache_uses_async_cache_transport(self):
-        from http_client import AsyncCacheControlTransport, get_async_client
+        from rdt.shared.http_client import AsyncCacheControlTransport, get_async_client
 
         client = get_async_client(use_cache=True)
         assert isinstance(client._transport, AsyncCacheControlTransport)
 
     def test_without_cache_uses_default_transport(self):
-        from http_client import AsyncCacheControlTransport, get_async_client
+        from rdt.shared.http_client import AsyncCacheControlTransport, get_async_client
 
         client = get_async_client(use_cache=False)
         assert not isinstance(client._transport, AsyncCacheControlTransport)
@@ -70,13 +70,13 @@ class TestMakeBearerAuth:
     """Tests for make_bearer_auth()."""
 
     def test_returns_httpx_auth(self):
-        from http_client import make_bearer_auth
+        from rdt.shared.http_client import make_bearer_auth
 
         auth = make_bearer_auth("mytoken")
         assert isinstance(auth, httpx.Auth)
 
     def test_bearer_auth_adds_authorization_header(self):
-        from http_client import make_bearer_auth
+        from rdt.shared.http_client import make_bearer_auth
 
         auth = make_bearer_auth("mytoken123")
         request = httpx.Request("GET", "https://example.com")
@@ -94,7 +94,7 @@ class TestCacheControlTransport:
         self.inner_transport = MagicMock(spec=httpx.BaseTransport)
 
     def test_cache_miss_calls_inner_transport(self):
-        from http_client import CacheControlTransport
+        from rdt.shared.http_client import CacheControlTransport
 
         self.cache.get.return_value = None
         mock_response = MagicMock()
@@ -113,7 +113,7 @@ class TestCacheControlTransport:
         self.cache.set.assert_called_once()
 
     def test_cache_hit_returns_cached_response(self):
-        from http_client import CacheControlTransport
+        from rdt.shared.http_client import CacheControlTransport
 
         cached_resp = MagicMock()
         self.cache.get.return_value = cached_resp
@@ -130,7 +130,7 @@ class TestCacheControlTransport:
         self.inner_transport.handle_request.assert_not_called()
 
     def test_non_get_request_not_cached(self):
-        from http_client import CacheControlTransport
+        from rdt.shared.http_client import CacheControlTransport
 
         mock_response = MagicMock()
         self.inner_transport.handle_request.return_value = mock_response
@@ -147,7 +147,7 @@ class TestCacheControlTransport:
         self.cache.set.assert_not_called()
 
     def test_non_200_response_not_cached(self):
-        from http_client import CacheControlTransport
+        from rdt.shared.http_client import CacheControlTransport
 
         self.cache.get.return_value = None
         mock_response = MagicMock()
@@ -170,7 +170,7 @@ class TestAsyncCacheControlTransport:
     """Tests for AsyncCacheControlTransport (instantiation only — async calls need pytest-asyncio)."""
 
     def test_instantiation_with_defaults(self):
-        from http_client import AsyncCacheControlTransport
+        from rdt.shared.http_client import AsyncCacheControlTransport
 
         cache = MagicMock(spec=Cache)
         transport = AsyncCacheControlTransport(cache=cache, cache_ttl=7200)
@@ -179,7 +179,7 @@ class TestAsyncCacheControlTransport:
         assert transport.transport is not None  # default AsyncHTTPTransport created
 
     def test_instantiation_with_custom_transport(self):
-        from http_client import AsyncCacheControlTransport
+        from rdt.shared.http_client import AsyncCacheControlTransport
 
         cache = MagicMock(spec=Cache)
         inner = MagicMock(spec=httpx.AsyncBaseTransport)
@@ -189,7 +189,7 @@ class TestAsyncCacheControlTransport:
         assert transport.transport is inner
 
     async def test_cache_hit_returns_cached_response(self):
-        from http_client import AsyncCacheControlTransport
+        from rdt.shared.http_client import AsyncCacheControlTransport
 
         cache = MagicMock(spec=Cache)
         cached_response = MagicMock()
@@ -208,7 +208,7 @@ class TestAsyncCacheControlTransport:
         inner.handle_async_request.assert_not_called()
 
     async def test_cache_miss_fetches_and_caches(self):
-        from http_client import AsyncCacheControlTransport
+        from rdt.shared.http_client import AsyncCacheControlTransport
 
         cache = MagicMock(spec=Cache)
         cache.get.return_value = None
@@ -230,7 +230,7 @@ class TestAsyncCacheControlTransport:
         cache.set.assert_called_once()
 
     async def test_non_200_response_not_cached(self):
-        from http_client import AsyncCacheControlTransport
+        from rdt.shared.http_client import AsyncCacheControlTransport
 
         cache = MagicMock(spec=Cache)
         cache.get.return_value = None
@@ -250,7 +250,7 @@ class TestAsyncCacheControlTransport:
         cache.set.assert_not_called()
 
     async def test_non_get_request_not_cached(self):
-        from http_client import AsyncCacheControlTransport
+        from rdt.shared.http_client import AsyncCacheControlTransport
 
         cache = MagicMock(spec=Cache)
         mock_response = MagicMock()

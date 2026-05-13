@@ -13,8 +13,8 @@ import typer
 from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from http_client import get_sync_client
-from rich_utils import (
+from rdt.shared.http_client import get_sync_client
+from rdt.shared.rich_utils import (
     create_progress_bar,
     create_summary_table,
     get_console,

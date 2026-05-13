@@ -688,10 +688,10 @@ Maintain both CLI and TUI during transition:
 
 ```bash
 # CLI mode (existing)
-python research_digest.py --config research_config.yaml
+python rdt/digest.py --config research_config.yaml
 
 # TUI mode (new)
-python research_digest.py --tui
+python rdt/digest.py --tui
 # or
 python research_digest_tui.py
 ```
@@ -921,4 +921,4 @@ async def test_dashboard_snapshot(snap_compare):
 - [Textual GitHub Examples](https://github.com/Textualize/textual)
 - [Rich Documentation](https://rich.readthedocs.io/) (foundation for Textual)
 - [TUI Design Patterns](https://textual.textualize.io/guide/)
-- Current codebase: `research_digest.py`, `scheduler_utils.py`, `config_models.py`
+- Current codebase: `rdt/digest.py`, `scheduler_utils.py`, `config_models.py`
