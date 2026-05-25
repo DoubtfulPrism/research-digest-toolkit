@@ -25,7 +25,7 @@ PyPDF2>=3.0.0
 arxiv>=2.1.0
 
 # TUI dependencies
-textual==8.1.1
+textual==8.2.7
 
 # Testing dependencies
 pytest>=7.4.0
